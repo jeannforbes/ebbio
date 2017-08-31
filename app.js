@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT);
 
 app.get('/', function(req, res){
-    res.sendfile(__dirname + '/index.html');
+    res.sendFile(__dirname + '/index.html');
 });
 
 io.on('connection', function(socket) {
