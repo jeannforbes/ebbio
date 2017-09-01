@@ -3,23 +3,13 @@
 <meta charset='utf-8' lang='en'>
 
 <head>
-<style type="text/css">
-	* { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font: 13px Helvetica, Arial; }
-    form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-    form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-    form button { width: 9%; border: none; padding: 10px; }
-    #messages { list-style-type: none; margin: 0; padding: 0; }
-    #messages li { padding: 5px 10px; }
-    #messages li:nth-child(odd) { background: #eee; }
-</style>
 
 <script src='/socket.io/socket.io.js'></script>
 <script>
   var socket = io.connect();
   var player, users = {};
   var c, ctx;
-  var mouse = {x:0,y:0};
+  var mouse = mousePrev = {x:0,y:0};
 
   socket.on('chatter', function(data){
   	displayMessage(data.user.name, data.message);
@@ -73,6 +63,7 @@
   function handleMouseMove(e){
   	getMouseLoc(e);
   	player.loc = mouse;
+  	player.rot = getRotation(player.loc);
   	socket.emit('moved', player);
   }
 
@@ -90,13 +81,19 @@
   }
 
   function drawUser(ctx, user){
+  	ctx.save();
   	ctx.fillStyle = "black";
   	ctx.beginPath();
-  	ctx.arc(user.loc.x, user.loc.y, 25, 0, 2*Math.PI);
+  	//ctx.arc(user.loc.x, user.loc.y, 25, 0, 2*Math.PI);
+  	ctx.translate(user.loc.x-20, user.loc.y+10);
+  	ctx.rotate(user.rot);
+  	ctx.fillRect(0,0,40,60);
   	ctx.stroke();
+  	ctx.restore();
   }
 
   function getMouseLoc(e){
+  	mousePrev = mouse;
   	mouse.x = e.clientX;
   	mouse.y = e.clientY;
   }
@@ -109,6 +106,19 @@
   	// Gameplay info
   	this.loc = {x:0,y:0};
   	this.rot = 0;
+  }
+
+  function getRotation(loc){
+  	var origin = {x:c.width/2,y:c.height/2};
+  	return dotProduct(loc, origin)/(magnitude(loc) * magnitude(origin));
+  }
+
+  function dotProduct(v1, v2){
+  	return (v1.x * v2.x) + (v1.y * v2.y);
+  }
+
+  function magnitude(v){
+  	return Math.sqrt(Math.pow(Math.abs(v.x),2)+Math.pow(Math.abs(v.y),2));
   }
 
 </script>
