@@ -36,7 +36,7 @@ io.on('connection', function(socket) {
         delete users[data.id];
 
         console.log(data.id+' left.');
-    })
+    });
 });
 
 function getRandom(arr){
