@@ -24,9 +24,3 @@ If you're sufficiently small compared to another player, they cannot eat you in 
 The inside of symbiotes is a peaceful environment filled with glowy-eaties.
 
 The inside of parasites is an acidic hellscape bereft of any value save the malice dwelling within their hearts, and a small number of anemic glowy-eaties.
-
-Tech:
-Base language: JavaScript
-Engine: MelonJS
-Online Capability: Socket.io
-Misc: npm libraries
