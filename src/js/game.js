@@ -39,6 +39,7 @@ Game.prototype.init = function(){
 	});
 
 	this.socket.on('newPlayer', function(data){
+		if(!data) return;
 		console.log('player joined: '+data);
 		_this.players[data.id] = new Player(data.id, data.name, data.type);
 	});
@@ -57,7 +58,12 @@ Game.prototype.init = function(){
 
 	this.socket.on('kicked', function(){
 		console.log("KICKED");
-	})
+		this.socket.emit('currentPlayers');
+	});
+
+	this.socket.on('collided', function(data){
+		if(_this.myPlayer) _this.myPlayer.isColliding = true;
+	});
 
 	var _this = this;
 	this.canvas.onmousemove = function(e){
@@ -73,6 +79,8 @@ Game.prototype.tick = function(timestamp){
 		this.socket.emit('playerMoved', {id: this.myPlayer.id, loc: this.myPlayer.loc});
 		this.myPlayer.move(this.mouse.loc);
 	}
+
+	this.checkPlayerCollisions();
 	this.draw();
 
 	// Which browsers is this supported for?
@@ -83,6 +91,17 @@ Game.prototype.tick = function(timestamp){
  *  GAAAAME LOGIC
  */
 
+Game.prototype.checkPlayerCollisions = function(){
+	var keys = Object.keys(this.players);
+	for(var i=0; i<keys.length; i++){
+		if(this.myPlayer.checkCollision(this.players[keys[i]]) && this.myPlayer.id != keys[i]){
+			this.socket.emit('collision', {
+				id1: this.myPlayer.id,
+				id2: keys[i]
+			});
+		}
+	}
+}
 
 /*
  *  CANVAS, DRAWING, ACTION!
@@ -119,6 +138,8 @@ Game.prototype.drawBackground = function(){
 Game.prototype.drawPlayers = function(){
 	var keys = Object.keys(this.players);
 	for(var i=0; i<keys.length; i++){
-		this.players[keys[i]].draw(this.ctx);
+		var color = 'white';
+		if(this.players[keys[i]].isColliding) color = 'red';
+		this.players[keys[i]].draw(this.ctx, color);
 	}
 };

@@ -22,12 +22,14 @@ app.get('/player.js', function(req, res){ res.sendFile(__dirname + '/js/player.j
 // What does the server need to track?
 
 var players = {};
+var clients = [];
 
 /*
  *  WEBSOCKETS, BABY!
  */
 
 io.on('connect', function(socket) {
+
     // Assign the new player an id
     var newPlayer = {
         name: getRandom(NAMES), // name
@@ -39,6 +41,9 @@ io.on('connect', function(socket) {
     players[newPlayer.id] = newPlayer;
     socket.emit('playerInfo', newPlayer); // let the new player know their info
     io.emit('newPlayer', newPlayer); // let everyone know there's a new player
+
+    // Add a new client
+    clients[newPlayer.id] = socket;
 
     // Update player location on move
     socket.on('playerMoved', function(data){
@@ -55,11 +60,33 @@ io.on('connect', function(socket) {
 
     var timeoutcheck = setInterval(function(){
         io.emit('timeoutCheck');
+        var keys = Object.keys(players);
+        for(var i=0; i<keys.length; i++){
+            if(Date.now() - players[keys[i]].lastTimeoutCheck > 150000){
+                io.emit('playerLeft', { id: keys[i] });
+                delete players[keys[i]];
+            }
+        }
     }, 3000);
 
     socket.on('timeoutCheck', function(data){
-        players[data.id].lastTimeoutCheck = Date.now();
+        if(players[data.id]) players[data.id].lastTimeoutCheck = Date.now();
     });
+
+    socket.on('collision', function(data){
+        // Need some collision checking here
+        //   to prevent peter-cheaters
+        if(!clients[data.id2] || !clients[data.id1]) return;
+
+        clients[data.id2].emit('collided', {
+            id1: data.id1,
+            id2: data.id2
+        });
+        clients[data.id1].emit('collided', {
+            id1: data.id1,
+            id2: data.id2
+        });
+    })
 
     // Returns the list of current players when requested
     socket.on('currentPlayers', function(){
