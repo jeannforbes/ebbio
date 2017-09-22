@@ -58,7 +58,7 @@ io.on('connect', function(socket) {
         console.log(data.id+' left.');
     });
 
-    var timeoutcheck = setInterval(function(){
+    /*var timeoutcheck = setInterval(function(){
         io.emit('timeoutCheck');
         var keys = Object.keys(players);
         for(var i=0; i<keys.length; i++){
@@ -67,11 +67,13 @@ io.on('connect', function(socket) {
                 delete players[keys[i]];
             }
         }
-    }, 3000);
+    }, 3000);*/
 
+    /*
     socket.on('timeoutCheck', function(data){
         if(players[data.id]) players[data.id].lastTimeoutCheck = Date.now();
     });
+    */
 
     socket.on('collision', function(data){
         // Need some collision checking here
@@ -94,7 +96,7 @@ io.on('connect', function(socket) {
     });
 });
 
-function deleteTimedOutPlayers(plist){
+/*function deleteTimedOutPlayers(plist){
     var keys = Object.keys(plist);
     for(var i=0; i<keys.length; i++){
         if(plist[keys[i]].lastTimeoutCheck < Date.now() - 150000){
@@ -102,7 +104,7 @@ function deleteTimedOutPlayers(plist){
             io.emit('playerLeft', {id: keys[i]});
         }
     }
-}
+}*/
 
 function getRandom(arr){
     return arr[parseInt(Math.random()*arr.length)];

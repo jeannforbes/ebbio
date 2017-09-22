@@ -32,10 +32,9 @@ Game.prototype.init = function(){
 		var keys = Object.keys(data);
 		for(var i=0; i<keys.length; i++){
 			console.log(data[keys[i]]);
-			if(data[keys[i]].id == _this.players.id) continue;
+			if(data[keys[i]].id === _this.players.id) continue;
 			_this.players[data[keys[i]].id] = new Player(data[keys[i]].id,data[keys[i]].name,data[keys[i]].type)
 		}
-		console.log(this.players);
 	});
 
 	this.socket.on('newPlayer', function(data){
@@ -52,6 +51,7 @@ Game.prototype.init = function(){
 		delete _this.players[data.id];
 	});
 
+	/* I don't like how the timeout currently works - will make better 
 	this.socket.on('timeoutCheck', function(data){
 		_this.socket.emit('timeoutCheck', {id: _this.myPlayer.id});
 	});
@@ -60,9 +60,11 @@ Game.prototype.init = function(){
 		console.log("KICKED");
 		this.socket.emit('currentPlayers');
 	});
+	*/
 
 	this.socket.on('collided', function(data){
-		if(_this.myPlayer) _this.myPlayer.isColliding = true;
+		_this.players[data.id1].collide();
+		_this.players[data.id2].collide();
 	});
 
 	var _this = this;
@@ -77,7 +79,7 @@ Game.prototype.init = function(){
 Game.prototype.tick = function(timestamp){
 	if(this.mouse.loc.distance(this.myPlayer.loc) > 10){
 		this.socket.emit('playerMoved', {id: this.myPlayer.id, loc: this.myPlayer.loc});
-		this.myPlayer.move(this.mouse.loc);
+		this.myPlayer.move(this.mouse.loc, this.mouse.prevLoc);
 	}
 
 	this.checkPlayerCollisions();
@@ -138,8 +140,6 @@ Game.prototype.drawBackground = function(){
 Game.prototype.drawPlayers = function(){
 	var keys = Object.keys(this.players);
 	for(var i=0; i<keys.length; i++){
-		var color = 'white';
-		if(this.players[keys[i]].isColliding) color = 'red';
-		this.players[keys[i]].draw(this.ctx, color);
+		this.players[keys[i]].draw(this.ctx);
 	}
 };
