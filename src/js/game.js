@@ -31,9 +31,10 @@ Game.prototype.init = function(){
 	this.socket.on('currentPlayers', function(data){
 		var keys = Object.keys(data);
 		for(var i=0; i<keys.length; i++){
-			console.log(data[keys[i]]);
-			if(data[keys[i]].id === _this.players.id) continue;
-			_this.players[data[keys[i]].id] = new Player(data[keys[i]].id,data[keys[i]].name,data[keys[i]].type)
+			var playerData = data[keys[i]];
+			if(playerData.id === _this.players.id) continue;
+			_this.players[playerData.id] = new Player(playerData.id,playerData.name,playerData.type);
+			_this.players[playerData.id].loc = new Victor(playerData.loc.x, playerData.loc.y);
 		}
 	});
 
@@ -51,20 +52,9 @@ Game.prototype.init = function(){
 		delete _this.players[data.id];
 	});
 
-	/* I don't like how the timeout currently works - will make better 
-	this.socket.on('timeoutCheck', function(data){
-		_this.socket.emit('timeoutCheck', {id: _this.myPlayer.id});
-	});
-
-	this.socket.on('kicked', function(){
-		console.log("KICKED");
-		this.socket.emit('currentPlayers');
-	});
-	*/
-
 	this.socket.on('collided', function(data){
-		_this.players[data.id1].collide();
-		_this.players[data.id2].collide();
+		_this.players[data.id].collide();
+		_this.myPlayer.collide();
 	});
 
 	var _this = this;
@@ -78,7 +68,10 @@ Game.prototype.init = function(){
 
 Game.prototype.tick = function(timestamp){
 	if(this.mouse.loc.distance(this.myPlayer.loc) > 10){
-		this.socket.emit('playerMoved', {id: this.myPlayer.id, loc: this.myPlayer.loc});
+		this.socket.emit('playerMoved', {
+			id: this.myPlayer.id, 
+			loc: {x: this.myPlayer.loc.x, y: this.myPlayer.loc.y}
+		});
 		this.myPlayer.move(this.mouse.loc, this.mouse.prevLoc);
 	}
 
@@ -98,8 +91,7 @@ Game.prototype.checkPlayerCollisions = function(){
 	for(var i=0; i<keys.length; i++){
 		if(this.myPlayer.checkCollision(this.players[keys[i]]) && this.myPlayer.id != keys[i]){
 			this.socket.emit('collision', {
-				id1: this.myPlayer.id,
-				id2: keys[i]
+				id: keys[i]
 			});
 		}
 	}

@@ -33,10 +33,11 @@ io.on('connect', function(socket) {
     // Assign the new player an id
     var newPlayer = {
         name: getRandom(NAMES), // name
-        id: crypto.randomBytes(20).toString('hex'), // id
+        id: socket.id,
         type: 0, // type
         joined: Date.now(),
         lastTimeoutCheck: Date.now(),
+        loc: {x:0,y:0},
     };
     players[newPlayer.id] = newPlayer;
     socket.emit('playerInfo', newPlayer); // let the new player know their info
@@ -47,46 +48,32 @@ io.on('connect', function(socket) {
 
     // Update player location on move
     socket.on('playerMoved', function(data){
+        if(!players[data.id]) return;
+        
+        if(data.loc) players[data.id].loc = {x: data.loc.x, y: data.loc.y};
+        else players[data.id].loc = {x: 0, y: 0};
         io.emit('playerMoved', data);
     });
 
-    // Update player list when a player leaves
-    socket.on('playerLeft', function(data){
-        io.emit('playerLeft', data);
-        delete players[data.id];
-
-        console.log(data.id+' left.');
+    socket.on('disconnect', function(data){
+        delete players[socket.id];
+        io.emit('playerLeft', {id: socket.id});
     });
-
-    /*var timeoutcheck = setInterval(function(){
-        io.emit('timeoutCheck');
-        var keys = Object.keys(players);
-        for(var i=0; i<keys.length; i++){
-            if(Date.now() - players[keys[i]].lastTimeoutCheck > 150000){
-                io.emit('playerLeft', { id: keys[i] });
-                delete players[keys[i]];
-            }
-        }
-    }, 3000);*/
-
-    /*
-    socket.on('timeoutCheck', function(data){
-        if(players[data.id]) players[data.id].lastTimeoutCheck = Date.now();
-    });
-    */
 
     socket.on('collision', function(data){
-        // Need some collision checking here
-        //   to prevent peter-cheaters
-        if(!clients[data.id2] || !clients[data.id1]) return;
 
-        clients[data.id2].emit('collided', {
-            id1: data.id1,
-            id2: data.id2
+        /*
+         *  We will need some collision checking here to prevent cheating
+         */
+
+        //Check that these clients exist
+        if(!clients[data.id] || !clients[socket.id]) return;
+
+        clients[socket.id].emit('collided', {
+            id: data.id,
         });
-        clients[data.id1].emit('collided', {
-            id1: data.id1,
-            id2: data.id2
+        clients[data.id].emit('collided', {
+            id: socket.id,
         });
     })
 
@@ -95,16 +82,6 @@ io.on('connect', function(socket) {
         socket.emit('currentPlayers', players);
     });
 });
-
-/*function deleteTimedOutPlayers(plist){
-    var keys = Object.keys(plist);
-    for(var i=0; i<keys.length; i++){
-        if(plist[keys[i]].lastTimeoutCheck < Date.now() - 150000){
-            delete plist[keys[i]];
-            io.emit('playerLeft', {id: keys[i]});
-        }
-    }
-}*/
 
 function getRandom(arr){
     return arr[parseInt(Math.random()*arr.length)];

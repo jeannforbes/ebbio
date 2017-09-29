@@ -16,7 +16,6 @@ Player = function(id, name, type){
 	this.vel = new Victor(0,0);
 	this.loc = new Victor(0,0);
 
-	this.isColliding = false;
 	this.color = 'white';
 };
 
@@ -27,15 +26,12 @@ Player.prototype.move = function(pos, prevPos){
 	this.loc.add(this.vel);
 };
 
-Player.prototype.collide = function(bool){
-	this.isColliding = false;
-	this.color = 'white';
-	if(bool){
-		this.isColliding = true;
-		this.color = 'red';
-	}
+// What happens to me on a collision?
+Player.prototype.collide = function(){
+
 };
 
+// Draws the player to the canvas
 Player.prototype.draw = function(ctx) {
 	ctx.save();
 
@@ -53,15 +49,15 @@ Player.prototype.draw = function(ctx) {
 	ctx.restore();
 };
 
+// Returns true if colliding
 Player.prototype.checkCollision = function(collider){
+	// Ignore collisions with yourself
 	if(this.id == collider.id) return;
+
+	// Check distance
 	var distBtwn = this.loc.distance(collider.loc);
 	if(distBtwn < (this.mass + collider.mass)){
-		this.collide(true);
-		collider.collide(true);
 		return true;
 	}
-	this.collide();
-	collider.collide();
 	return false;
 };
