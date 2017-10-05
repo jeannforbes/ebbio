@@ -1,4 +1,6 @@
 var Game = function(socket, canvas, mouse){
+	this.paletteBg = ['#848cff', '#88a2ff', '#97bdff', '#a9c9ff', '#c7dcff'];
+
 	this.socket = socket;
 
 	this.canvas = canvas;
@@ -9,6 +11,8 @@ var Game = function(socket, canvas, mouse){
 	this.players = {};
 	this.myPlayer = new Player();
 
+	this.crumbs = {};
+
 	this.mouse = mouse;
 };
 
@@ -18,7 +22,7 @@ Game.prototype.init = function(){
 	this.socket = io.connect();
 
 	this.socket.on('playerInfo', function(data){
-		_this.myPlayer = new Player(data.id, data.name, data.type);
+		_this.myPlayer = new Player(data.id, data.name, data.type, data.color);
 		_this.players[data.id] = _this.myPlayer;
 		console.log('Connected with id: '+_this.myPlayer.id);
 	});
@@ -33,7 +37,11 @@ Game.prototype.init = function(){
 		for(var i=0; i<keys.length; i++){
 			var playerData = data[keys[i]];
 			if(playerData.id === _this.players.id) continue;
-			_this.players[playerData.id] = new Player(playerData.id,playerData.name,playerData.type);
+			_this.players[playerData.id] = new Player(
+											playerData.id,
+											playerData.name,
+											playerData.type,
+											playerData.color);
 			_this.players[playerData.id].loc = new Victor(playerData.loc.x, playerData.loc.y);
 		}
 	});
@@ -57,6 +65,27 @@ Game.prototype.init = function(){
 		_this.myPlayer.collide();
 	});
 
+	this.socket.on('currentCrumbs', function(data){
+		var keys = Object.keys(data);
+		for(var i=0; i<keys.length; i++){
+			var crumbData = data[keys[i]];
+			if(crumbData.id === _this.crumbs.id) continue;
+			_this.crumbs[crumbData.id] = new Crumb(
+											crumbData.id,
+											new Victor(crumbData.loc.x, crumbData.loc.y),
+											crumbData.mass);
+		}
+	});
+
+	this.socket.on('crumbAdded', function(data){
+		_this.crumbs[data.id] = new Crumb(data.id, data.loc, data.mass);
+	});
+
+	this.socket.on('crumbRemoved', function(data){
+		console.log('nom');
+		delete _this.crumbs[data.id];
+	});
+
 	var _this = this;
 	this.canvas.onmousemove = function(e){
 		_this.mouse.handleMove(e);
@@ -76,6 +105,7 @@ Game.prototype.tick = function(timestamp){
 	}
 
 	this.checkPlayerCollisions();
+	this.checkCrumbPlayerCollisions();
 	this.draw();
 
 	// Which browsers is this supported for?
@@ -97,6 +127,17 @@ Game.prototype.checkPlayerCollisions = function(){
 	}
 }
 
+Game.prototype.checkCrumbPlayerCollisions = function(){
+	var keys = Object.keys(this.crumbs);
+	for(var i=0; i<keys.length; i++){
+		if(this.myPlayer.checkCollision(this.crumbs[keys[i]])){
+			this.socket.emit('crumbRemoved', {
+				id: keys[i]
+			});
+		}
+	}
+}
+
 /*
  *  CANVAS, DRAWING, ACTION!
  */
@@ -106,13 +147,14 @@ Game.prototype.draw = function(){
 	this.clearCanvas();
 	this.drawBackground();
 	this.drawPlayers();
+	this.drawCrumbs();
 };
 
 // Clear the canvas to an ugly shade of puce
 Game.prototype.clearCanvas = function(){
 	this.ctx.save();
 
-	this.ctx.fillStyle = "#cc8899";
+	this.ctx.fillStyle = this.paletteBg[this.paletteBg.length];
 	this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
 
 	this.ctx.restore();
@@ -122,7 +164,7 @@ Game.prototype.clearCanvas = function(){
 Game.prototype.drawBackground = function(){
 	this.ctx.save();
 
-	this.ctx.fillStyle = "black"
+	this.ctx.fillStyle = this.paletteBg[1];
 	this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
 
 	this.ctx.restore();
@@ -135,3 +177,10 @@ Game.prototype.drawPlayers = function(){
 		this.players[keys[i]].draw(this.ctx);
 	}
 };
+
+Game.prototype.drawCrumbs = function(){
+	var keys = Object.keys(this.crumbs);
+	for(var i=0; i<keys.length; i++){
+		this.crumbs[keys[i]].draw(this.ctx);
+	}
+}

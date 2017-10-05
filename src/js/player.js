@@ -4,7 +4,7 @@
  *  Describes a user/player's attributes and methods
  */
 
-Player = function(id, name, type){
+Player = function(id, name, type, color){
 	this.id = id;
 	this.name = name || 'anonymous';
 	this.type = type || 0;
@@ -16,20 +16,30 @@ Player = function(id, name, type){
 	this.vel = new Victor(0,0);
 	this.loc = new Victor(0,0);
 
-	this.color = 'white';
+	this.color = color;
 };
 
 Player.prototype.move = function(pos, prevPos){
-	this.accel = pos.clone().subtract(this.loc).normalize();
+	// Get accel from mouse pos
+	this.accel.add(pos.clone().subtract(this.loc).normalize());
 	this.vel.add(this.accel);
+
+	// Limit velocity
 	if(this.vel.magnitude() > 5) this.vel.normalize().multiply(new Victor(5,5));
 	this.loc.add(this.vel);
+
+	this.accel = new Victor(0,0);
 };
 
 // What happens to me on a collision?
 Player.prototype.collide = function(){
 
 };
+
+Player.prototype.eat = function(crumb){
+	mass += crumb.mass;
+	crumb.destroy();
+}
 
 // Draws the player to the canvas
 Player.prototype.draw = function(ctx) {
