@@ -37,8 +37,7 @@ Player.prototype.collide = function(){
 };
 
 Player.prototype.eat = function(crumb){
-	mass += crumb.mass;
-	crumb.destroy();
+	this.mass += crumb.mass;
 }
 
 // Draws the player to the canvas

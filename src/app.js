@@ -20,6 +20,10 @@ app.get('/mouse.js', function(req, res){ res.sendFile(__dirname + '/js/mouse.js'
 app.get('/player.js', function(req, res){ res.sendFile(__dirname + '/js/player.js'); });
 app.get('/crumb.js', function(req, res){ res.sendFile(__dirname + '/js/crumb.js'); });
 
+// Starting CONSTs
+
+const MASS = 25;
+
 // What does the server need to track?
 
 var players = {};
@@ -45,6 +49,7 @@ io.on('connect', function(socket) {
         lastTimeoutCheck: Date.now(),
         loc: {x:0,y:0},
         color: palettePlayer[parseInt(Math.random()*palettePlayer.length)],
+        mass: MASS,
     };
     players[newPlayer.id] = newPlayer;
     socket.emit('playerInfo', newPlayer); // let the new player know their info
@@ -87,7 +92,8 @@ io.on('connect', function(socket) {
 
     socket.on('crumbRemoved', function(data){
         delete crumbs[data.id];
-        socket.emit('crumbRemoved', data);
+        if(data.playerId && data.playerMass) players[data.playerId].mass = data.playerMass;
+        io.emit('crumbRemoved', data);
     });
 
     socket.on('currentCrumbs', function(){
@@ -98,6 +104,11 @@ io.on('connect', function(socket) {
     socket.on('currentPlayers', function(){
         socket.emit('currentPlayers', players);
     });
+
+    socket.on('crumbEaten', function(data){
+        players[data.id].mass = data.mass;
+        socket.emit('crumbEaten', data);
+    });
 });
 
 function getRandom(arr){
@@ -105,15 +116,23 @@ function getRandom(arr){
 };
 
 function addCrumb(){
-    var id = crypto.randomBytes(20).toString('hex');
+    var id = Date.now();
     var crumb = {
         id: id,
         loc: {x: Math.random()*500, y: Math.random()*600},
         mass: parseInt(Math.random()*5)+2,
     };
     crumbs[id] = crumb;
+    setTimeout(function(id){
+        removeCrumb(id);
+    });
 
     io.emit('crumbAdded', crumb);
 };
+
+function removeCrumb(id){
+    delete crumbs[id];
+    io.emit('crumbRemoved', {id: id});
+}
 
 const NAMES = ['scrapple', 'balrug', 'ewe', 'pandini', 'fuchs'];

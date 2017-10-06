@@ -82,8 +82,11 @@ Game.prototype.init = function(){
 	});
 
 	this.socket.on('crumbRemoved', function(data){
-		console.log('nom');
 		delete _this.crumbs[data.id];
+	});
+
+	this.socket.on('crumbEaten', function(data){
+		_this.players[data.id].mass = data.mass;
 	});
 
 	var _this = this;
@@ -131,9 +134,9 @@ Game.prototype.checkCrumbPlayerCollisions = function(){
 	var keys = Object.keys(this.crumbs);
 	for(var i=0; i<keys.length; i++){
 		if(this.myPlayer.checkCollision(this.crumbs[keys[i]])){
-			this.socket.emit('crumbRemoved', {
-				id: keys[i]
-			});
+			this.myPlayer.eat(this.crumbs[keys[i]]);
+			this.socket.emit('crumbRemoved', {id: keys[i]});
+			this.socket.emit('crumbEaten', {id: this.myPlayer.id, mass: this.myPlayer.mass});
 		}
 	}
 }
