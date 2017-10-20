@@ -82,12 +82,24 @@ io.on('connect', function(socket) {
         //Check that these clients exist
         if(!clients[data.id] || !clients[socket.id]) return;
 
-        clients[socket.id].emit('collided', {
-            id: data.id,
-        });
-        clients[data.id].emit('collided', {
-            id: socket.id,
-        });
+        var p1 = player[socket.id];
+        var p2 = player[data.id];
+
+        if(p1.mass < p2.mass){
+            clients[socket.id].emit('collided', { id: data.id, dead: true });
+            clients[data.id].emit('collided', {
+                id: socket.id,
+                dead: false,
+                mass: p1.mass,
+            });
+        } else if(p1.mass > p2.mass){
+            clients[socket.id].emit('collided', {
+                id: data.id,
+                dead: false,
+                mass: p2.mass,
+            });
+            clients[data.id].emit('collided', { id: socket.id, dead: true });
+        }
     });
 
     socket.on('crumbRemoved', function(data){

@@ -9,6 +9,7 @@ Player = function(id, name, type, color){
 	this.name = name || 'anonymous';
 	this.type = type || 0;
 	this.mass = 25;
+	this.maxMass = 60;
 	this.maxSpeed = 100;
 
 	// What's the vector, Victor?
@@ -37,7 +38,8 @@ Player.prototype.collide = function(){
 };
 
 Player.prototype.eat = function(crumb){
-	this.mass += crumb.mass;
+	if(this.mass < this.maxMass) this.mass += crumb.mass;
+	this.color = crumb.color;
 }
 
 // Draws the player to the canvas

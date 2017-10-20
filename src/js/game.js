@@ -14,6 +14,8 @@ var Game = function(socket, canvas, mouse){
 	this.crumbs = {};
 
 	this.mouse = mouse;
+
+	this.gameState = 'PLAYING';
 };
 
 Game.prototype.init = function(){
@@ -61,8 +63,14 @@ Game.prototype.init = function(){
 	});
 
 	this.socket.on('collided', function(data){
-		_this.players[data.id].collide();
-		_this.myPlayer.collide();
+		if(data.dead){
+			this.gameState = 'QUIT';
+			this.socket.disconnect();
+			this.drawEndGame();
+		}
+
+		_this.players[data.id].collide(data);
+		_this.myPlayer.collide(data);
 	});
 
 	this.socket.on('currentCrumbs', function(data){
@@ -95,8 +103,16 @@ Game.prototype.init = function(){
 		_this.socket.emit('moved');
 	}
 
-	window.requestAnimationFrame(() => {this.tick();});
+	this.start();
 };
+
+Game.prototype.start = function(){
+	window.requestAnimationFrame(() => {this.tick();});
+}
+
+Game.prototype.stop = function(){
+	window.cancelAnimationFrame();
+}
 
 Game.prototype.tick = function(timestamp){
 	if(this.mouse.loc.distance(this.myPlayer.loc) > 10){
@@ -187,3 +203,15 @@ Game.prototype.drawCrumbs = function(){
 		this.crumbs[keys[i]].draw(this.ctx);
 	}
 }
+
+// Bit of a misnomer, since it doesn't actually use the canvas
+Game.prototype.drawEndGame = function() {
+	var endDiv = document.createElement('div');
+	var endP = document.createElement('p');
+
+	endDiv.className = 'endDiv';
+	endP.innerHTML = 'You were eaten!  Refresh the page to try again.';
+
+	document.querySelector('#container').appendChild(endDiv);
+	endDiv.appendChild(endP);
+};
