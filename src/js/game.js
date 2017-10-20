@@ -14,17 +14,24 @@ var Game = function(socket, canvas, mouse){
 	this.crumbs = {};
 
 	this.mouse = mouse;
+    
+    // !!!! This should be renamed to something more descriptive
+    //        i.e. "mapRoot" or "partitionsRoot"
+    this.root = new Node();
 
-	this.gameState = 'PLAYING';
+    this.gameState = 'PLAYING';
 };
 
 Game.prototype.init = function(){
 	var _this = this;
 
+    //setup quadtree
+    this.root.init(4096, 4096);
+    
 	this.socket = io.connect();
 
 	this.socket.on('playerInfo', function(data){
-		_this.myPlayer = new Player(data.id, data.name, data.type, data.color);
+		_this.myPlayer = new Player(data.id, data.name, data.type, data.color, this.root);
 		_this.players[data.id] = _this.myPlayer;
 		console.log('Connected with id: '+_this.myPlayer.id);
 	});
@@ -86,7 +93,7 @@ Game.prototype.init = function(){
 	});
 
 	this.socket.on('crumbAdded', function(data){
-		_this.crumbs[data.id] = new Crumb(data.id, data.loc, data.mass);
+		_this.crumbs[data.id] = new Crumb(data.id, data.loc, data.mass, this.root);
 	});
 
 	this.socket.on('crumbRemoved', function(data){
@@ -122,6 +129,8 @@ Game.prototype.tick = function(timestamp){
 		});
 		this.myPlayer.move(this.mouse.loc, this.mouse.prevLoc);
 	}
+    
+    this.root.checkNumObjs();
 
 	this.checkPlayerCollisions();
 	this.checkCrumbPlayerCollisions();

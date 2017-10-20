@@ -4,18 +4,22 @@
  *  Describes a user/player's attributes and methods
  */
 
-Player = function(id, name, type, color){
+Player = function(id, name, type, color, root){
 	this.id = id;
 	this.name = name || 'anonymous';
 	this.type = type || 0;
 	this.mass = 25;
 	this.maxMass = 60;
 	this.maxSpeed = 100;
-
+    
+    this.rootRef = root;
+    
 	// What's the vector, Victor?
 	this.accel = new Victor(0,0);
 	this.vel = new Victor(0,0);
 	this.loc = new Victor(0,0);
+    
+    root.addObj(this);
 
 	this.color = color;
 };
@@ -30,6 +34,9 @@ Player.prototype.move = function(pos, prevPos){
 	this.loc.add(this.vel);
 
 	this.accel = new Victor(0,0);
+    
+    this.node.removeObj(this);
+    this.rootRef.addObj(this);
 };
 
 // What happens to me on a collision?

@@ -1,10 +1,15 @@
-Crumb = function(id,loc,mass){
+Crumb = function(id,loc,mass, root){
     this.palette = ['#ffeead', '#ff6f69', '#ffcc5c', '#88d8b0'];
 
     this.id = id,
     this.loc = new Victor(loc.x,loc.y);
     this.color = this.palette[parseInt(Math.random()*this.palette.length)];
     this.mass = mass;
+    
+    this.rootRef = root;
+    
+    root.addObj(this);
+    
 };
 
 Crumb.prototype.draw = function(ctx){
@@ -33,5 +38,6 @@ Crumb.prototype.draw = function(ctx){
 }
 
 Crumb.prototype.destroy = function(){
+    this.node.remove(this);
     delete this;
 }
