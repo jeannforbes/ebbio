@@ -142,6 +142,15 @@ Game.prototype.tick = function(timestamp){
 			forward: {x: this.myPlayer.forward.x, y: this.myPlayer.forward.y},
 		});
 		this.myPlayer.move(this.mouse.loc, this.mouse.prevLoc);
+
+		// Bound the player to a certain distance from world origin
+		if(	this.myPlayer.loc.distance(this.world.origin) > this.world.radius){
+			let vecToPlayer = this.myPlayer.loc.clone().subtract(this.world.origin);
+			vecToPlayer.normalize();
+			vecToPlayer.x *= this.myPlayer.maxSpeed;
+			vecToPlayer.y *= this.myPlayer.maxSpeed;
+			this.myPlayer.loc.subtract(vecToPlayer);
+		}
 	}
     
     //this.root.checkNumObjs();
