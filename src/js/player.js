@@ -4,31 +4,63 @@
  *  Describes a user/player's attributes and methods
  */
 
-Player = function(id, name, type){
+Player = function(id, name, type, color, root){
 	this.id = id;
 	this.name = name || 'anonymous';
 	this.type = type || 0;
 	this.mass = 25;
+	this.maxMass = 60;
 	this.maxSpeed = 100;
-
+    
+    this.rootRef = root;
+    
 	// What's the vector, Victor?
 	this.accel = new Victor(0,0);
 	this.vel = new Victor(0,0);
 	this.loc = new Victor(0,0);
+	this.forward = new Victor(0,0);
+    
+    // Add this player to its partition in the world
+    //root.addObj(this);
 
-	this.color = 'white';
+	this.color = color;
 };
 
 Player.prototype.move = function(pos, prevPos){
-	this.accel = pos.clone().subtract(this.loc).normalize();
+	// Get accel from mouse pos
+	this.accel.add(pos.clone().subtract(this.loc).normalize());
 	this.vel.add(this.accel);
+
+	// Limit velocity
 	if(this.vel.magnitude() > 5) this.vel.normalize().multiply(new Victor(5,5));
 	this.loc.add(this.vel);
+
+	var tempVel = this.vel.clone();
+	tempVel.x *= 5; tempVel.y *= 5;
+	this.forward = tempVel;
+
+	// Reset accel after calculating forces
+	this.accel = new Victor(0,0);
+
+    // Partitioning voodoun
+    //this.node.removeObj(this);
+    //this.rootRef.addObj(this);
 };
 
-// What happens to me on a collision?
-Player.prototype.collide = function(){
+// What happens to me when bitten?
+Player.prototype.takeDamage = function(){
+	this.mass -= 5;
+	if(this.mass < 0) this.reset(new Victor(0,0), 10);
+};
 
+Player.prototype.eat = function(crumb){
+	if(this.mass < this.maxMass) this.mass += crumb.mass;
+	this.color = crumb.color;
+}
+
+Player.prototype.reset = function(origin, mass) {
+	this.loc = new Victor(origin.x + Math.random()*10, origin.y + Math.random()*10);
+	this.mass = mass;
 };
 
 // Draws the player to the canvas
@@ -38,10 +70,18 @@ Player.prototype.draw = function(ctx) {
 	// style
 	ctx.fillStyle = this.color || 'white';
 	
-	// drawing
+	// Draw body
 	ctx.beginPath();
-	ctx.arc(this.loc.x, this.loc.y, this.mass, 0, 2*Math.PI);
+	ctx.arc(0, 0, this.mass, 0, 2*Math.PI);
 	ctx.fill();
+
+	ctx.lineWidth = 5;
+
+	// Draw forward vector
+	ctx.beginPath();
+	ctx.moveTo(0,0);
+	ctx.lineTo(this.forward.x, this.forward.y);
+	ctx.stroke();
 
 	// transforms
 	ctx.translate(this.loc.x-20, this.loc.y+10);
@@ -49,8 +89,24 @@ Player.prototype.draw = function(ctx) {
 	ctx.restore();
 };
 
+Player.prototype.isBehind = function(collider){
+	if(    this.id == collider.id
+		|| !collider.loc
+		|| !collider.forward ) return false;
+
+	var vecToLoc = collider.loc.clone().subtract(this.loc);
+	var angleBtwn = this.forward.angle(vecToLoc);
+	var distToTheirButt = vecToLoc.distance(this.forward);
+	var distToYourButt = vecToLoc.distance(collider.forward);
+
+	if( distToTheirButt < distToYourButt){
+		return true;
+	}
+	return false;
+}
+
 // Returns true if colliding
-Player.prototype.checkCollision = function(collider){
+Player.prototype.isColliding = function(collider){
 	// Ignore collisions with yourself
 	if(this.id == collider.id) return;
 

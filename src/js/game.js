@@ -1,60 +1,120 @@
+const WORLD_RADIUS = 1000;
+
 var Game = function(socket, canvas, mouse){
+	this.paletteBg = ['#848cff', '#88a2ff', '#97bdff', '#a9c9ff', '#c7dcff'];
+
 	this.socket = socket;
 
 	this.canvas = canvas;
-	canvas.width = window.innerWidth;
-	canvas.height = window.innerHeight;
 	this.ctx = canvas.getContext('2d');
 
-	this.players = {};
+	this.world;
+	this.camera;
+
 	this.myPlayer = new Player();
 
 	this.mouse = mouse;
+    
+    // !!!! This should be renamed to something more descriptive
+    //        i.e. "mapRoot" or "partitionsRoot"
+    //this.root = new Node();
+
+    this.gameState = 'PLAYING';
 };
 
 Game.prototype.init = function(){
 	var _this = this;
 
+	this.canvas.width = window.innerWidth;
+	this.canvas.height = window.innerHeight;
+
+	this.world = new World(WORLD_RADIUS);
+	this.camera = new Camera(this.canvas.width, this.canvas.height, this.world);
+	this.mouse.camera = this.camera;
+
+    //setup quadtree
+    //this.root.init(4096, 4096);
+    
 	this.socket = io.connect();
 
 	this.socket.on('playerInfo', function(data){
-		_this.myPlayer = new Player(data.id, data.name, data.type);
-		_this.players[data.id] = _this.myPlayer;
+		_this.myPlayer = new Player(data.id, data.name, data.type, data.color, this.root);
+		_this.world.players[data.id] = _this.myPlayer;
 		console.log('Connected with id: '+_this.myPlayer.id);
+
+		_this.camera.follow(_this.myPlayer);
 	});
 
 	window.onbeforeunload = function(){
 		this.socket.emit('playerLeft', {id: this.myPlayer.id});
 	}
 
-	this.socket.emit('currentPlayers');
-	this.socket.on('currentPlayers', function(data){
-		var keys = Object.keys(data);
+	this.socket.on('update', function(data){
+		let players = _this.world.players;
+		let crumbs = _this.world.crumbs;
+
+		// Update players
+		var keys = Object.keys(data.players);
 		for(var i=0; i<keys.length; i++){
-			var playerData = data[keys[i]];
-			if(playerData.id === _this.players.id) continue;
-			_this.players[playerData.id] = new Player(playerData.id,playerData.name,playerData.type);
-			_this.players[playerData.id].loc = new Victor(playerData.loc.x, playerData.loc.y);
+			var p = data.players[keys[i]];
+			if(p.id === players.id) continue;
+			players[p.id] = new Player(
+											p.id,
+											p.name,
+											p.type,
+											p.color);
+			players[p.id].loc = new Victor(p.loc.x, p.loc.y);
+			players[p.id].forward = new Victor(p.forward.x, p.forward.y);
+		}
+
+		// Update crumbs
+		keys = Object.keys(data.crumbs);
+		for(var i=0; i<keys.length; i++){
+			var crumbData = data.crumbs[keys[i]];
+			if(crumbData.id === crumbs.id) continue;
+			crumbs[crumbData.id] = new Crumb(
+											crumbData.id,
+											new Victor(crumbData.loc.x, crumbData.loc.y),
+											crumbData.mass);
 		}
 	});
 
 	this.socket.on('newPlayer', function(data){
 		if(!data) return;
 		console.log('player joined: '+data);
-		_this.players[data.id] = new Player(data.id, data.name, data.type);
+		_this.world.players[data.id] = new Player(data.id, data.name, data.type, data.color);
 	});
 
 	this.socket.on('playerMoved', function(data){
-		if(_this.players[data.id]) _this.players[data.id].loc = data.loc;
+		if(_this.world.players[data.id]){
+			_this.world.players[data.id].loc = new Victor(data.loc.x, data.loc.y);
+			_this.world.players[data.id].forward = new Victor(data.forward.x, data.forward.y);
+		}
 	});
 
 	this.socket.on('playerLeft', function(data){
-		delete _this.players[data.id];
+		delete _this.world.players[data.id];
 	});
 
-	this.socket.on('collided', function(data){
-		_this.players[data.id].collide();
-		_this.myPlayer.collide();
+	this.socket.on('bite', function(data){
+		if(data.bitee === _this.myPlayer.id){
+			console.log(data.biter+' bit you!');
+			_this.myPlayer.takeDamage();
+			_this.sendPlayerUpdate(_this.myPlayer);
+		}
+		if(data.biter === _this.myPlayer.id) console.log('Bit '+data.bitee);
+	});
+
+	this.socket.on('crumbAdded', function(data){
+		_this.world.crumbs[data.id] = new Crumb(data.id, data.loc, data.mass, this.root);
+	});
+
+	this.socket.on('crumbRemoved', function(data){
+		delete _this.world.crumbs[data.id];
+	});
+
+	this.socket.on('crumbEaten', function(data){
+		_this.players[data.id].mass = data.mass;
 	});
 
 	var _this = this;
@@ -63,19 +123,31 @@ Game.prototype.init = function(){
 		_this.socket.emit('moved');
 	}
 
-	window.requestAnimationFrame(() => {this.tick();});
+	this.start();
 };
+
+Game.prototype.start = function(){
+	window.requestAnimationFrame(() => {this.tick();});
+}
+
+Game.prototype.stop = function(){
+	window.cancelAnimationFrame();
+}
 
 Game.prototype.tick = function(timestamp){
 	if(this.mouse.loc.distance(this.myPlayer.loc) > 10){
 		this.socket.emit('playerMoved', {
 			id: this.myPlayer.id, 
-			loc: {x: this.myPlayer.loc.x, y: this.myPlayer.loc.y}
+			loc: {x: this.myPlayer.loc.x, y: this.myPlayer.loc.y},
+			forward: {x: this.myPlayer.forward.x, y: this.myPlayer.forward.y},
 		});
 		this.myPlayer.move(this.mouse.loc, this.mouse.prevLoc);
 	}
+    
+    //this.root.checkNumObjs();
 
 	this.checkPlayerCollisions();
+	this.checkCrumbPlayerCollisions();
 	this.draw();
 
 	// Which browsers is this supported for?
@@ -87,15 +159,36 @@ Game.prototype.tick = function(timestamp){
  */
 
 Game.prototype.checkPlayerCollisions = function(){
-	var keys = Object.keys(this.players);
+	var keys = Object.keys(this.world.players);
 	for(var i=0; i<keys.length; i++){
-		if(this.myPlayer.checkCollision(this.players[keys[i]]) && this.myPlayer.id != keys[i]){
-			this.socket.emit('collision', {
-				id: keys[i]
-			});
+		let p = this.world.players[keys[i]];
+		if(this.myPlayer.isColliding(p) && this.myPlayer.id != keys[i]){
+			// Check who's biting whom
+			if(this.myPlayer.isBehind(p)){
+				this.socket.emit('bite', {
+					id: keys[i]
+				});
+			}
 		}
 	}
 }
+
+Game.prototype.checkCrumbPlayerCollisions = function(){
+	let crumbs = this.world.crumbs;
+
+	let keys = Object.keys(crumbs);
+	for(let i=0; i<keys.length; i++){
+		if(this.myPlayer.isColliding(crumbs[keys[i]])){
+			this.myPlayer.eat(crumbs[keys[i]]);
+			this.socket.emit('crumbRemoved', {id: keys[i]});
+			this.socket.emit('crumbEaten', {id: this.myPlayer.id, mass: this.myPlayer.mass});
+		}
+	}
+}
+
+Game.prototype.sendPlayerUpdate = function(data){
+	this.socket.emit('playerUpdate', data);
+};
 
 /*
  *  CANVAS, DRAWING, ACTION!
@@ -103,35 +196,17 @@ Game.prototype.checkPlayerCollisions = function(){
 
  // Main draw function
 Game.prototype.draw = function(){
-	this.clearCanvas();
-	this.drawBackground();
-	this.drawPlayers();
+	this.camera.render(this.ctx);
 };
 
-// Clear the canvas to an ugly shade of puce
-Game.prototype.clearCanvas = function(){
-	this.ctx.save();
+// Bit of a misnomer, since it doesn't actually use the canvas
+Game.prototype.drawEndGame = function() {
+	var endDiv = document.createElement('div');
+	var endP = document.createElement('p');
 
-	this.ctx.fillStyle = "#cc8899";
-	this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
+	endDiv.className = 'endDiv';
+	endP.innerHTML = 'You were eaten!  Refresh the page to try again.';
 
-	this.ctx.restore();
-};
-
-// Draw the background
-Game.prototype.drawBackground = function(){
-	this.ctx.save();
-
-	this.ctx.fillStyle = "black"
-	this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
-
-	this.ctx.restore();
-};
-
-// Draw all the players we know about
-Game.prototype.drawPlayers = function(){
-	var keys = Object.keys(this.players);
-	for(var i=0; i<keys.length; i++){
-		this.players[keys[i]].draw(this.ctx);
-	}
+	document.querySelector('#container').appendChild(endDiv);
+	endDiv.appendChild(endP);
 };

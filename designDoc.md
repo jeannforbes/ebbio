@@ -10,6 +10,7 @@
 *When the bar fills up, the newbie is given a choice of weapons to have after evolving. 
 *Remembering how effective it was when they were bitten, the newbie decides to evolve a powerful bitin' jaw.
 *Now prowling the world, the less-fresh newbie finds themself some fresh meat and devours them whole, growing and evolving all the while.
+*Steam vents populate the world, spewing glowy orbs of delicousness
 
 ##Introduction
 *Ebbio is a mouse-controlled competitive online multiplayer game. 
@@ -23,6 +24,7 @@
 *When you damage a player, chunks fly off and that player loses some size.
 *Any player can consume those chunks to grow.
 *The amount of size in those chunks is less than the amount of size the damaged player lost.
+*Also populating the ocean are a collection of steam vents, from which orbs regularly spawn.
 
 ##Controls
 *Players control their avatars with the mouse.
