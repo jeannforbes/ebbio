@@ -135,13 +135,27 @@ Game.prototype.stop = function(){
 }
 
 Game.prototype.tick = function(timestamp){
-	if(this.mouse.loc.distance(this.myPlayer.loc) > 10){
+	if(this.mouse.loc.distance(this.myPlayer.loc) > 5){
 		this.socket.emit('playerMoved', {
 			id: this.myPlayer.id, 
 			loc: {x: this.myPlayer.loc.x, y: this.myPlayer.loc.y},
 			forward: {x: this.myPlayer.forward.x, y: this.myPlayer.forward.y},
 		});
-		this.myPlayer.move(this.mouse.loc, this.mouse.prevLoc);
+		this.myPlayer.move(this.mouse.loc);
+
+		// When the mouse isn't moving, we still are
+		if( this.mouse.loc.distance(new Victor(this.camera.w, this.camera.h)) > 11 ){
+			this.mouse.loc.add(this.myPlayer.forward);
+		}
+
+		// Bound the player to a certain distance from world origin
+		if(	this.myPlayer.loc.distance(this.world.origin) > this.world.radius){
+			let vecToPlayer = this.myPlayer.loc.clone().subtract(this.world.origin);
+			vecToPlayer.normalize();
+			vecToPlayer.x *= this.myPlayer.maxSpeed;
+			vecToPlayer.y *= this.myPlayer.maxSpeed;
+			this.myPlayer.loc.subtract(vecToPlayer);
+		}
 	}
     
     //this.root.checkNumObjs();

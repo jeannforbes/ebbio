@@ -10,7 +10,7 @@ Player = function(id, name, type, color, root){
 	this.type = type || 0;
 	this.mass = 25;
 	this.maxMass = 60;
-	this.maxSpeed = 100;
+	this.maxSpeed = 5;
     
     this.rootRef = root;
     
@@ -26,15 +26,17 @@ Player = function(id, name, type, color, root){
 	this.color = color;
 };
 
-Player.prototype.move = function(pos, prevPos){
+Player.prototype.move = function(pos){
 	// Get accel from mouse pos
 	this.accel.add(pos.clone().subtract(this.loc).normalize());
 	this.vel.add(this.accel);
 
 	// Limit velocity
-	if(this.vel.magnitude() > 5) this.vel.normalize().multiply(new Victor(5,5));
+	if(this.vel.magnitude() > this.maxSpeed) 
+		this.vel.normalize().multiply(new Victor(this.maxSpeed, this.maxSpeed));
 	this.loc.add(this.vel);
 
+	// Calculate forward vector
 	var tempVel = this.vel.clone();
 	tempVel.x *= 5; tempVel.y *= 5;
 	this.forward = tempVel;
