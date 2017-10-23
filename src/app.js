@@ -19,6 +19,8 @@ app.get('/game.js', function(req, res){ res.sendFile(__dirname + '/js/game.js');
 app.get('/mouse.js', function(req, res){ res.sendFile(__dirname + '/js/mouse.js'); });
 app.get('/player.js', function(req, res){ res.sendFile(__dirname + '/js/player.js'); });
 app.get('/crumb.js', function(req, res){ res.sendFile(__dirname + '/js/crumb.js'); });
+app.get('/camera.js', function(req, res){ res.sendFile(__dirname + '/js/camera.js'); });
+app.get('/world.js', function(req, res){ res.sendFile(__dirname + '/js/world.js'); });
 
 // Starting CONSTs
 
@@ -32,11 +34,15 @@ var clients = [];
 
 var palettePlayer = ['red','green','yellow','orange'];
 
+let clientUpdateInterval = setInterval(function(){
+    io.emit('update', {players: players, crumbs: crumbs});
+}, 100);
+
 /*
  *  WEBSOCKETS, BABY!
  */
 
- var crumbMaker = setInterval(addCrumb, 4000);
+ //var crumbMaker = setInterval(addCrumb, 4000);
 
 io.on('connect', function(socket) {
 
@@ -50,6 +56,7 @@ io.on('connect', function(socket) {
         loc: {x:0,y:0},
         color: palettePlayer[parseInt(Math.random()*palettePlayer.length)],
         mass: MASS,
+        forward: {x:0, y:0},
     };
     players[newPlayer.id] = newPlayer;
     socket.emit('playerInfo', newPlayer); // let the new player know their info
@@ -65,6 +72,8 @@ io.on('connect', function(socket) {
 
         if(data.loc) players[data.id].loc = {x: data.loc.x, y: data.loc.y};
         else players[data.id].loc = {x: 0, y: 0};
+        if(data.forward) players[data.id].forward = {x: data.forward.x, y: data.forward.y};
+        else players[data.id].forward = {x: 0, y: 0};
         io.emit('playerMoved', data);
     });
 
@@ -73,7 +82,7 @@ io.on('connect', function(socket) {
         io.emit('playerLeft', {id: socket.id});
     });
 
-    socket.on('collision', function(data){
+    socket.on('bite', function(data){
 
         /*
          *  We will need some collision checking here to prevent cheating
@@ -82,24 +91,14 @@ io.on('connect', function(socket) {
         //Check that these clients exist
         if(!clients[data.id] || !clients[socket.id]) return;
 
-        var p1 = player[socket.id];
-        var p2 = player[data.id];
+        var p1 = players[socket.id];
+        var p2 = players[data.id];
 
-        if(p1.mass < p2.mass){
-            clients[socket.id].emit('collided', { id: data.id, dead: true });
-            clients[data.id].emit('collided', {
-                id: socket.id,
-                dead: false,
-                mass: p1.mass,
-            });
-        } else if(p1.mass > p2.mass){
-            clients[socket.id].emit('collided', {
-                id: data.id,
-                dead: false,
-                mass: p2.mass,
-            });
-            clients[data.id].emit('collided', { id: socket.id, dead: true });
-        }
+        io.emit('bite', {biter: p1.id, bitee: p2.id});
+    });
+
+    socket.on('playerUpdate', function(data){
+        players[socket.id] = data;
     });
 
     socket.on('crumbRemoved', function(data){
@@ -118,8 +117,10 @@ io.on('connect', function(socket) {
     });
 
     socket.on('crumbEaten', function(data){
-        players[data.id].mass = data.mass;
-        socket.emit('crumbEaten', data);
+        if(players[data.id].mass){
+            players[data.id].mass = data.mass;
+            socket.emit('crumbEaten', data);
+        }
     });
 });
 

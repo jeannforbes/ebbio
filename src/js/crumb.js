@@ -8,7 +8,7 @@ Crumb = function(id,loc,mass, root){
     
     this.rootRef = root;
     
-    root.addObj(this);
+    //root.addObj(this);
     
 };
 
