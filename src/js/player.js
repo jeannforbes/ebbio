@@ -26,7 +26,7 @@ Player = function(id, name, type, color, root){
 	this.color = color;
 };
 
-Player.prototype.move = function(pos, prevPos){
+Player.prototype.move = function(pos){
 	// Get accel from mouse pos
 	this.accel.add(pos.clone().subtract(this.loc).normalize());
 	this.vel.add(this.accel);
