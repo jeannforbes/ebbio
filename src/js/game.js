@@ -75,9 +75,11 @@ Game.prototype.init = function(){
 			if(dataCrumb.id === crumbs.id) continue;
 
 			if(!crumbs[dataCrumb.id]){
-				crumbs[dataCrumb.id] = Particle(dataCrumb.id);
+				crumbs[dataCrumb.id] = new Particle(dataCrumb.id);
 			}
 			let c = crumbs[dataCrumb.id];
+			console.log(data);
+			console.log(dataCrumb.id);
 			c.loc = new Victor(dataCrumb.loc.x, dataCrumb.loc.y),
 			c.mass = dataCrumb.mass;
 			c.color = dataCrumb.color;
@@ -163,7 +165,7 @@ Game.prototype.tick = function(){
 		this.myPlayer.move(this.mouse.loc);
 
 		// Keep moving forward
-		if( this.mouse.loc.distance(Victor(this.camera.w, this.camera.h)) > 11 ){
+		if( this.mouse.loc.distance(new Victor(this.camera.w, this.camera.h)) > 11 ){
 			this.mouse.loc.add(this.myPlayer.forward);
 		}
 

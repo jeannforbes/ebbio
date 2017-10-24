@@ -154,13 +154,13 @@ function moveObj(obj){
 function addCrumb(){
     let id = Date.now();
     let crumb = {
-        id: id,
-        loc: {x: 300, y: 0 },
-        vel: {x: 0, y: 0 },
+        id   : id,
+        loc  : {x: 300, y: 0 },
+        vel  : {x: 0, y: 0 },
         accel: {x: 0, y: 0},
-        mass: parseInt(Math.random()*5)+2,
+        mass : parseInt(Math.random()*5)+2,
         color: paletteCrumb[parseInt(Math.random()*paletteCrumb.length,10)],
-        type: 'halo',
+        type : 'halo',
     };
     crumbs[id] = crumb;
 
