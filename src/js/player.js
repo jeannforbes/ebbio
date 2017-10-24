@@ -112,7 +112,7 @@ Player.prototype.isBehind = function(collider){
 // Returns true if colliding
 Player.prototype.isColliding = function(collider){
 	// Ignore collisions with yourself
-	if(this.id == collider.id) return;
+	if(this.id === collider.id) return;
 
 	// Check distance
 	var distBtwn = this.loc.distance(collider.loc);
