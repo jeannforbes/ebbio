@@ -61,7 +61,10 @@ Player.prototype.eat = function(crumb){
 }
 
 Player.prototype.reset = function(origin, mass) {
-	this.loc = new Victor(origin.x + Math.random()*10, origin.y + Math.random()*10);
+	if(!origin) origin = new Victor(0,0);
+	if(!mass) mass = 10;
+
+	this.loc = origin.clone();
 	this.mass = mass;
 };
 
@@ -74,7 +77,7 @@ Player.prototype.draw = function(ctx) {
 	
 	// Draw body
 	ctx.beginPath();
-	ctx.arc(0, 0, this.mass, 0, 2*Math.PI);
+	ctx.arc(0, 0, this.mass/2, 0, 2*Math.PI);
 	ctx.fill();
 
 	ctx.lineWidth = 5;
@@ -86,7 +89,6 @@ Player.prototype.draw = function(ctx) {
 	ctx.stroke();
 
 	// transforms
-	ctx.translate(this.loc.x-20, this.loc.y+10);
 
 	ctx.restore();
 };
@@ -114,7 +116,7 @@ Player.prototype.isColliding = function(collider){
 
 	// Check distance
 	var distBtwn = this.loc.distance(collider.loc);
-	if(distBtwn < (this.mass + collider.mass)){
+	if(distBtwn < (this.mass/2 + collider.mass/2)){
 		return true;
 	}
 	return false;

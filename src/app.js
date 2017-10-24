@@ -1,7 +1,7 @@
 var app = require('express')();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
-var victor = require('victor');
+var Victor = require('victor');
 var crypto = require('crypto');
 
 const PORT = process.env.PORT || 3000;
@@ -18,9 +18,9 @@ app.get('/main.js', function(req, res){ res.sendFile(__dirname + '/js/main.js');
 app.get('/game.js', function(req, res){ res.sendFile(__dirname + '/js/game.js'); });
 app.get('/mouse.js', function(req, res){ res.sendFile(__dirname + '/js/mouse.js'); });
 app.get('/player.js', function(req, res){ res.sendFile(__dirname + '/js/player.js'); });
-app.get('/crumb.js', function(req, res){ res.sendFile(__dirname + '/js/crumb.js'); });
 app.get('/camera.js', function(req, res){ res.sendFile(__dirname + '/js/camera.js'); });
 app.get('/world.js', function(req, res){ res.sendFile(__dirname + '/js/world.js'); });
+app.get('/particles.js', function(req, res){ res.sendFile(__dirname + '/js/particles.js'); });
 
 // Starting CONSTs
 
@@ -32,7 +32,8 @@ var players = {};
 var crumbs = {};
 var clients = [];
 
-var palettePlayer = ['red','green','yellow','orange'];
+var paletteCrumb   = ['#a8e6cf','#dcedc1','#ffd3b6','#ffaaa5','#ff8b94'];
+var palettePlayer = ['#ee4035','#f37736','#fdf498','#7bc043','#0392cf'];
 
 let clientUpdateInterval = setInterval(function(){
     io.emit('update', {players: players, crumbs: crumbs});
@@ -42,7 +43,7 @@ let clientUpdateInterval = setInterval(function(){
  *  WEBSOCKETS, BABY!
  */
 
- //var crumbMaker = setInterval(addCrumb, 4000);
+ var crumbMaker = setInterval(addCrumb, 2500);
 
 io.on('connect', function(socket) {
 
@@ -117,10 +118,9 @@ io.on('connect', function(socket) {
     });
 
     socket.on('crumbEaten', function(data){
-        if(players[data.id].mass){
-            players[data.id].mass = data.mass;
-            socket.emit('crumbEaten', data);
-        }
+        if(!players[data.id]) return;
+        players[data.id].mass = data.mass;
+        socket.emit('crumbEaten', data);
     });
 });
 
@@ -128,17 +128,45 @@ function getRandom(arr){
     return arr[parseInt(Math.random()*arr.length)];
 };
 
+function populateCrumbs(num){
+    for(let i=0; i<num; i++){
+        addCrumb();
+    }
+}
+
+function applyForce(obj, force){
+    obj.accel = {
+        x:obj.accel.x+force.x,
+        y:obj.accel.y+force.y };
+}
+
+function moveObj(obj){
+    obj.vel = {
+        x:obj.accel.x+obj.vel.x,
+        y:obj.accel.y+obj.vel.y };
+    obj.loc = {
+        x:obj.loc.x+obj.vel.x,
+        y:obj.loc.y+obj.vel.y };
+
+    obj.accel = {x:0,y:0};
+}
+
 function addCrumb(){
-    var id = Date.now();
-    var crumb = {
+    let id = Date.now();
+    let crumb = {
         id: id,
-        loc: {x: Math.random()*500, y: Math.random()*600},
+        loc: {x: 300, y: 0 },
+        vel: {x: 0, y: 0 },
+        accel: {x: 0, y: 0},
         mass: parseInt(Math.random()*5)+2,
+        color: paletteCrumb[parseInt(Math.random()*paletteCrumb.length,10)],
+        type: 'halo',
     };
     crumbs[id] = crumb;
-    setTimeout(function(id){
-        removeCrumb(id);
-    });
+
+    applyForce(crumb, {x:Math.random()*2-1,y:Math.random()*2-1});
+    setInterval(function(){ moveObj(crumb); }, 100);
+    setTimeout(function(){ removeCrumb(id); }, 10000 + Math.random()*10000);
 
     io.emit('crumbAdded', crumb);
 };
@@ -146,6 +174,6 @@ function addCrumb(){
 function removeCrumb(id){
     delete crumbs[id];
     io.emit('crumbRemoved', {id: id});
-}
+};
 
 const NAMES = ['scrapple', 'balrug', 'ewe', 'pandini', 'fuchs'];

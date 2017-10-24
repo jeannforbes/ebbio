@@ -17,7 +17,7 @@ Camera.prototype.render = function(ctx){
         if(this.focus) this.centerOn(this.focus.loc);
         ctx.save();
         this.drawBG(ctx);
-        //this.drawCrumbs(ctx);
+        this.drawCrumbs(ctx);
         this.drawPlayers(ctx);
         ctx.restore();
     }
@@ -52,9 +52,15 @@ Camera.prototype.drawCrumbs = function(ctx){
     let crumbs = this.world.crumbs;
     let keys = Object.keys(crumbs);
 
-    for(var i=0; i<keys.length; i++){
+    for(let i=0; i<keys.length; i++){
         let c = crumbs[keys[i]];
-        c.draw(ctx);
+         //if(this.isVisible(c)){
+             let camLoc = this.worldToCamera(c.loc);
+             ctx.save();
+             ctx.translate(camLoc.x, camLoc.y);
+             c.draw(ctx);
+             ctx.restore();
+        // }
     }
 };
 
@@ -69,8 +75,9 @@ Camera.prototype.drawBG = function(ctx) {
     let origin = this.worldToCamera(this.world.origin);
     let dist = this.getCenter().distance(origin);
     let grd = ctx.createRadialGradient(origin.x, origin.y, 75, origin.x, origin.y, this.world.radius);
-    grd.addColorStop(0, '#9AF');
-    grd.addColorStop(1, '#005');
+    grd.addColorStop(1, this.world.paletteBG[0]);
+    grd.addColorStop(0.5, this.world.paletteBG[1]);
+    grd.addColorStop(0, this.world.paletteBG[2]);
     ctx.globalAlpha = 0.8;
     ctx.fillStyle = grd;
     ctx.fillRect(0,0,this.w,this.h);
