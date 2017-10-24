@@ -46,7 +46,7 @@ Game.prototype.init = function(){
 	});
 
 	window.onbeforeunload = function(){
-		this.socket.emit('playerLeft', {id: this.myPlayer.id});
+		_this.socket.emit('playerLeft', {id: _this.myPlayer.id});
 	}
 
 	this.socket.on('update', function(data){
@@ -65,17 +65,23 @@ Game.prototype.init = function(){
 											p.color);
 			players[p.id].loc = new Victor(p.loc.x, p.loc.y);
 			players[p.id].forward = new Victor(p.forward.x, p.forward.y);
+			players[p.id].mass = p.mass;
 		}
 
-		// Update crumbs
+		// Update crumb objects
 		keys = Object.keys(data.crumbs);
 		for(var i=0; i<keys.length; i++){
-			var crumbData = data.crumbs[keys[i]];
-			if(crumbData.id === crumbs.id) continue;
-			crumbs[crumbData.id] = new Crumb(
-											crumbData.id,
-											new Victor(crumbData.loc.x, crumbData.loc.y),
-											crumbData.mass);
+			var dataCrumb = data.crumbs[keys[i]];
+			if(dataCrumb.id === crumbs.id) continue;
+
+			if(!crumbs[dataCrumb.id]){
+				crumbs[dataCrumb.id] = Particle(dataCrumb.id);
+			}
+			let c = crumbs[dataCrumb.id];
+			c.loc = new Victor(dataCrumb.loc.x, dataCrumb.loc.y),
+			c.mass = dataCrumb.mass;
+			c.color = dataCrumb.color;
+			crumbs[dataCrumb.id] = c;
 		}
 	});
 
@@ -106,7 +112,17 @@ Game.prototype.init = function(){
 	});
 
 	this.socket.on('crumbAdded', function(data){
-		_this.world.crumbs[data.id] = new Crumb(data.id, data.loc, data.mass, this.root);
+		let p = new Particle(data.id);
+		p.loc = new Victor(data.loc.x, data.loc.y);
+		p.vel = new Victor(data.vel.x, data.vel.y);
+		p.accel = new Victor(data.accel.x, data.accel.y);
+		p.mass = data.mass;
+		p.color = data.color;
+		p.type = data.type;
+		_this.world.crumbs[p.id] = p;
+		console.log('crumb added at '+p.loc.x+', '+p.loc.y);
+
+		p.applyForce(new Victor(10,10));
 	});
 
 	this.socket.on('crumbRemoved', function(data){
@@ -114,7 +130,8 @@ Game.prototype.init = function(){
 	});
 
 	this.socket.on('crumbEaten', function(data){
-		_this.players[data.id].mass = data.mass;
+		console.log(data.mass);
+		_this.world.players[data.id].mass = data.mass;
 	});
 
 	var _this = this;
@@ -134,8 +151,10 @@ Game.prototype.stop = function(){
 	window.cancelAnimationFrame();
 }
 
-Game.prototype.tick = function(timestamp){
-	if(this.mouse.loc.distance(this.myPlayer.loc) > 5){
+Game.prototype.tick = function(){
+
+	// Deal with my player's movement based on Mouse movement
+	if(this.mouse.loc.distance(this.myPlayer.loc) > 10){
 		this.socket.emit('playerMoved', {
 			id: this.myPlayer.id, 
 			loc: {x: this.myPlayer.loc.x, y: this.myPlayer.loc.y},
@@ -143,12 +162,12 @@ Game.prototype.tick = function(timestamp){
 		});
 		this.myPlayer.move(this.mouse.loc);
 
-		// When the mouse isn't moving, we still are
-		if( this.mouse.loc.distance(new Victor(this.camera.w, this.camera.h)) > 11 ){
+		// Keep moving forward
+		if( this.mouse.loc.distance(Victor(this.camera.w, this.camera.h)) > 11 ){
 			this.mouse.loc.add(this.myPlayer.forward);
 		}
 
-		// Bound the player to a certain distance from world origin
+		// Limit the player's loc to a distance from world origin
 		if(	this.myPlayer.loc.distance(this.world.origin) > this.world.radius){
 			let vecToPlayer = this.myPlayer.loc.clone().subtract(this.world.origin);
 			vecToPlayer.normalize();
@@ -157,12 +176,13 @@ Game.prototype.tick = function(timestamp){
 			this.myPlayer.loc.subtract(vecToPlayer);
 		}
 	}
-    
-    //this.root.checkNumObjs();
 
+	// Check collisions
 	this.checkPlayerCollisions();
 	this.checkCrumbPlayerCollisions();
-	this.draw();
+
+	// Draw
+	this.camera.render(this.ctx);
 
 	// Which browsers is this supported for?
 	window.requestAnimationFrame(() => {this.tick();});
@@ -202,25 +222,4 @@ Game.prototype.checkCrumbPlayerCollisions = function(){
 
 Game.prototype.sendPlayerUpdate = function(data){
 	this.socket.emit('playerUpdate', data);
-};
-
-/*
- *  CANVAS, DRAWING, ACTION!
- */
-
- // Main draw function
-Game.prototype.draw = function(){
-	this.camera.render(this.ctx);
-};
-
-// Bit of a misnomer, since it doesn't actually use the canvas
-Game.prototype.drawEndGame = function() {
-	var endDiv = document.createElement('div');
-	var endP = document.createElement('p');
-
-	endDiv.className = 'endDiv';
-	endP.innerHTML = 'You were eaten!  Refresh the page to try again.';
-
-	document.querySelector('#container').appendChild(endDiv);
-	endDiv.appendChild(endP);
 };
