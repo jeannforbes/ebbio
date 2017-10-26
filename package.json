@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.html",
   "scripts": {
-    "test": "nodemon ./src/app.js",
-    "start": "node ./src/app.js"
+    "test": "nodemon ./app.js",
+    "start": "node ./app.js"
   },
   "author": "Jeannette Forbes",
   "license": "ISC",

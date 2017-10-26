@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8' lang='en'>
+
+    <title>ebb.io</title>
+    <meta name='description' content='Eat your friends'>
+    <meta name='author' content='jforbes and IanMCav'>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id='container'>
+        <canvas id='game'></canvas>
+    </div>
+ </body>
+
+<script src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js'></script>
+<script src='script.js'></script>
+<script>
+
+    let canvas;
+    let ctx;
+    let camera;
+
+    let socket;
+    let renderInterval;
+
+    let gameData;
+
+    let acceptingUserInput = true;
+
+    const init = () => {
+
+        canvas = document.querySelector('#game');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        ctx = canvas.getContext('2d');
+
+        socket = io.connect();
+
+        socket.on('joined', (data) => {
+            console.log(data);
+            camera = new Camera(window.innerWidth, window.innerHeight, socket.id);
+            draw();
+        });
+
+        socket.on('update', (data) => {
+            gameData = data;
+        });
+
+        // Input Event Handlers
+        canvas.onmouseup = (e) => {
+            socket.emit('mouseClick', {x: e.clientX, y: e.clientY});
+        }
+
+        canvas.onmousemove = (e) => {
+            if(!acceptingUserInput) return;
+            socket.emit('mouseMove', 
+                {   x: e.clientX, 
+                    y: e.clientY,
+                    w: canvas.width,
+                    h: canvas.height });
+        }
+
+        window.onkeydown = (e) => {
+            switch(e.keyCode){
+                case 68: // d
+                    camera.debug = !camera.debug;
+                    console.log('Debugging: '+camera.debug);
+                    break;
+                case 70: // f
+                    acceptingUserInput = !acceptingUserInput;
+                    console.log('User input: '+ acceptingUserInput);
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
+
+    const draw = () => {
+        if(gameData) {
+            let p = gameData.players[socket.id];
+            if(p) camera.centerOn(new Vector(p.pbody.loc.x, p.pbody.loc.y));
+            camera.render(ctx, gameData);
+        }
+
+        window.requestAnimationFrame(draw.bind(this));
+    };
+
+    const drawParticle = (p) => {
+        ctx.save();
+
+        ctx.restore();
+    };
+
+    window.onload = init;
+</script>
+    
+</html>
