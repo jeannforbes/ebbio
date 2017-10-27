@@ -15,6 +15,26 @@ class Player{
         this.pbody = new PBody();
         this.speed = 10;
         this.maxSpeed = 10;
+
+        // Event/input handlers
+        this._onCollision = undefined;
+        this._onClick = undefined;
+        this._onRightClick = undefined;
+    }
+
+    get onCollision{
+        if(this._onCollision) return this._onCollision;
+        return () => {};
+    }
+
+    get onClick{
+        if(this._onClick) return this._onClick;
+        return () => {};
+    }
+
+    get onRightClick{
+        if(this._onRightClick) return this._onRightClick;
+        return () => {};
     }
 
     moveToMouse(data){
