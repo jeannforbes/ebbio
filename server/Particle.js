@@ -12,6 +12,8 @@ class Particle{
         this.id = id;
         this.type = PARTICLE_TYPES.DEFAULT;
         this.color = global.randomFromArray(global.PALETTE.PARTICLE) || 'white';
+        this.edible = true;
+        this.timeUntilEat = 5;
 
         this.pbody = new PBody();
         this.pbody.mass = 5;
@@ -24,6 +26,8 @@ class Particle{
     update(){
         this.age++;
         this.pbody.move(5);
+
+        if(this.age > this.timeUntilEat) this.edible = true;
     }
 }
 

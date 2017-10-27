@@ -27,6 +27,7 @@
     let renderInterval;
 
     let gameData;
+    let prevData;
 
     // Useful debug stuff
     let acceptingUserInput = true;
@@ -47,6 +48,7 @@
         });
 
         socket.on('update', (data) => {
+            prevData = gameData;
             gameData = data;
         });
 

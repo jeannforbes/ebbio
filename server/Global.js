@@ -12,6 +12,7 @@ loadGlobalConstants = () =>{
             PARASITE: [],
             SYMBIOTE: [],
         },
+        FRICTION: 0.1,
     };
 
     global.COLLIDER = {

@@ -39,18 +39,18 @@ class Game{
 
             // Handle client mouse movement
             socket.on('mouseMove', (data) => {
-                _this.world.playerMouseMoved(socket, data);
+                _this.world.clientMouseMoved(socket, data);
             });
 
             // Handle client mouse clicks
             socket.on('mouseClick', (data) => {
-                _this.world.playerClicked(socket, data);
+                _this.world.clientClicked(socket, data);
             });
 
             // Handle client disconnecting
             socket.on('disconnect', (data) => {
                 console.log(socket.id+' left.');
-                _this.world.playerDisconnect(socket, data);
+                _this.world.clientDisconnect(socket, data);
             });
         });
     }

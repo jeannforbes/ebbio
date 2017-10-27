@@ -1,5 +1,6 @@
-let PBody = require('./PBody.js').PBody;
 let Victor = require('victor');
+let PBody = require('./PBody.js').PBody;
+let PlayerAbility = new (require('./PlayerAbility.js').PlayerAbility)();
 
 const PLAYER_STATE = {
     'DEFAULT': 0,
@@ -13,12 +14,16 @@ class Player{
         this.color = global.randomFromArray(global.PALETTE.PLAYER) || 'white';
 
         this.pbody = new PBody();
-        this.speed = 10;
+        this.speed = 20;
         this.maxSpeed = 10;
 
+        this.biteDamage = 2;
+        this.dashBoost = 10;
+        this.dashDuration = 1000;
+
         // Event/input handlers
-        this._onCollision = undefined;
-        this._onClick = undefined;
+        this._onCollision = PlayerAbility.bite.bind(this);
+        this._onClick = PlayerAbility.dash.bind(this);
         this._onRightClick = undefined;
     }
 
@@ -47,7 +52,7 @@ class Player{
 
         // If the mouse is close enough to the player, hold still
         if(playerToMouse.magnitude() < 10){
-            this.pbody.vel.x = this.pbody.vel.y = 0;
+            this.pbody.vel.x = this.pbody.vel.y = 1;
             return;
         }
 

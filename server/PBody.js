@@ -14,12 +14,18 @@ class PBody{
     }
 
     get size(){ return this.mass * this.density; }
+    get forward(){
+        let f = this.vel.clone().normalize();
+        f.x *= this.size;
+        f.x *= this.size;
+        return f;
+    }
 
     // F = m * a
     applyForce(force){
         let f = force.clone();
-        f.x /= this.mass;
-        f.y /= this.mass;
+        f.x /= this.mass * 0.25;
+        f.y /= this.mass * 0.25;
         this.accel.add(f);
     }
 
@@ -48,6 +54,17 @@ class PBody{
             default:
                 break;
         }
+    }
+
+    isBehind(pb){
+        // Distance from your front to their loc
+        let distA = this.forward.distance(pb.loc);
+
+        // Distance from their front to your loc
+        let distB = pb.forward.distance(this.loc);
+
+        if(distA > distB) return true;
+        return false;
     }
 }
 

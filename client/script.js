@@ -13,15 +13,16 @@ class Camera{
 
         this.debug = false;
         this.pid = pid;
+        this.p = undefined;
     }
 
     render(ctx, data){
         if(!data) return;
 
-        let p = data.players[this.pid];
-        if(!p) return;
+        this.p = data.players[this.pid];
+        if(!this.p) return;
 
-        this.centerOn(new Vector(p.pbody.loc.x, p.pbody.loc.y));
+        this.centerOn(new Vector(this.p.pbody.loc.x, this.p.pbody.loc.y));
 
         ctx.save();
         this.drawBackground(ctx, data.world);
@@ -41,6 +42,7 @@ class Camera{
     }
 
     drawAll(ctx, map, type){
+        if(!prevData) return;
 
         let keys = Object.keys(map);
         for(let i=0; i<keys.length; i++){
@@ -71,6 +73,7 @@ class Camera{
     }
 
     drawPlayer(ctx, p){
+
         ctx.save();
 
         ctx.fillStyle = p.color || 'white';
@@ -140,28 +143,16 @@ class Camera{
         ctx.restore();
     }
 
-    worldToCamera(v){
-        return v.clone().subtract(this.loc);
-    }
-
-    cameraToWorld(v){
-        return v.clone().add(this.loc);
-    }
-
     centerOn(fLoc){
         if(fLoc) this.loc = new Vector(fLoc.x - this.w/2, fLoc.y - this.h/2);
-        //if(fLoc) this.loc = fLoc.clone();
     };
 
     drawDebug(ctx, data){
         let p = data.players[this.pid];
-        if(!p){
-            console.log('No player id!  Turning debugging off.');
-            this.debug = false;
-            return;
+        if(!p){ console.log('No player id!  Turning debugging off.');
+                this.debug = false;
+                return; 
         }
-
-        let cameraLoc = this.worldToCamera(this.loc);
         let playerLoc = this.worldToCamera(new Vector(p.pbody.loc.x, p.pbody.loc.y));
 
         // Line from mouse's location to player's location
@@ -170,12 +161,39 @@ class Camera{
         ctx.strokeStyle = 'black';
         ctx.beginPath();
         ctx.moveTo(playerLoc.x, playerLoc.y);
-        ctx.lineTo(cameraLoc.x, cameraLoc.y);
+        ctx.lineTo(this.loc.x, this.loc.y);
         ctx.stroke();
         ctx.closePath();
         ctx.restore();
 
+        // Draw to prev data
+        let prevPLoc = prevData.players[p.id].pbody.loc;
+        prevPLoc = this.worldToCamera(new Vector(prevPLoc.x, prevPLoc.y));
+        let lerped = this.lerp(playerLoc, prevPLoc, .20);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(prevPLoc.x, prevPLoc.y, 10, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.closePath();
+        ctx.restore();
 
+    }
+
+    /* HELPER FUNCTIONS */
+
+    worldToCamera(v){
+        return v.clone().subtract(this.loc);
+    }
+
+    cameraToWorld(v){
+        return v.clone().add(this.loc);
+    }
+
+    lerp(pos, targetPos, frac){
+        let lerpVec = pos.clone();
+        lerpVec.x += (targetPos.x + lerpVec.x) * frac;
+        lerpVec.y += (targetPos.y + lerpVec.y) * frac;
+        return lerpVec;
     }
 }
 

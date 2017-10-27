@@ -1,6 +1,7 @@
 let Victor = require('victor');
 
 let Player = require('./Player.js').Player;
+let Particle = require('./Particle.js').Particle;
 let Emitter = require('./Emitter.js').Emitter;
 
 class World{
@@ -9,16 +10,21 @@ class World{
         this.room = room || 'default';
 
         this.origin = origin || new Victor(0,0);
-        this.radius = radius || 1000;
+        this.radius = radius || 500;
 
-        this.subWorlds = {}; // worlds inside this one
+        this.subWorlds = {}; // worlds directly inside this one
         this.players = {}; // players
-        this.emitters = {}; // crumb emitters
-        this.particles = {};
+        this.emitters = {}; // particle emitters
+        this.particles = {}; // stray particles
 
         let e = new Emitter(Date.now());
         e.pbody.loc.y = -200;
         this.emitters[e.id] = e;
+
+        let e2 = new Emitter(Date.now());
+        e2.pbody.loc.y = 400;
+        this.emitters[e2.id] = e2;
+
     }
 
     /*
@@ -26,20 +32,19 @@ class World{
      */
 
     // Applies force based on mouse location
-    playerMouseMoved(socket, data){
-        let sRoom = socket.rooms[Object.keys(socket.rooms)[0]];
-        let pworld = this.findWorldByRoom(sRoom);
-        if(pworld && pworld.players[socket.id]){
-            let p = pworld.players[socket.id];
-            p.moveToMouse(data);
-        }
+    clientMouseMoved(socket, data){
+        this.findPlayerById(socket.id).moveToMouse(data);
     }
 
-    playerClicked(socket, data){
-        console.log(socket.id + ' clicked.');
+    clientClicked(socket, data){
+        this.findPlayerById(socket.id).onClick(data);
     }
 
-    playerDisconnect(socket, data){
+    clientRightClicked(socket, data){
+        this.findPlayerById(socket.id).onRightClick(data);
+    }
+
+    clientDisconnect(socket, data){
         let pworld = this.findWorldByPlayerId(socket.id);
         if(pworld && pworld.players[socket.id]){
             delete pworld.players[socket.id];
@@ -84,25 +89,39 @@ class World{
     update(io) {
         let _this = this;
 
-        // Players & Players
+        /* CHECK COLLISIONS */
+
+        // player v player
         this.checkCollisions(this.players, this.players, (a,b) => {
             let aToB = b.pbody.loc.clone().subtract(a.pbody.loc);
             let dist = aToB.magnitude();
             aToB.normalize();
-            aToB.x *= - (a.pbody.size + b.pbody.size - dist) *10;
-            aToB.y *= - (a.pbody.size + b.pbody.size - dist) *10;
+            aToB.x *= - (a.pbody.size + b.pbody.size - dist) * 10;
+            aToB.y *= - (a.pbody.size + b.pbody.size - dist) * 10;
             a.pbody.applyForce(aToB);
+
+            if(a.pbody.isBehind(b.pbody)){
+                a.onCollision(b);
+                for(var i=0; i<a.biteDamage; i++){
+                    let p = new Particle(Date.now());
+                    p.edible = false;
+                    p.color = b.color;
+                    p.pbody.loc = b.pbody.loc.clone();
+                    p.pbody.applyForce(a.pbody.vel.clone());
+                    this.particles[p.id] = p;
+                }
+            }
         });
 
-        // Players & Particles
+        // player v particle
         this.checkCollisions(this.players, this.particles, (a,b) => {
+            if(!b.edible) return;
             console.log('particle collision');
             a.pbody.mass += b.pbody.mass;
-            
-            // Delete the particle
             delete this.particles[b.id];
         });
 
+        // We have to check emitter particles separately
         let eKeys = Object.keys(this.emitters);
         for(let i=0; i<eKeys.length; i++){
             let e = this.emitters[eKeys[i]];
@@ -113,11 +132,14 @@ class World{
             });
         }
 
+        /* UPDATE */
+
         this.updateAll(this.players);
         this.updateAll(this.emitters);
         this.updateAll(this.particles);
         this.updateAll(this.worlds);
 
+        // send update to this world's players
         io.to(this.room).emit('update', {
             world: {
                 origin: _this.origin,
@@ -135,7 +157,8 @@ class World{
         if(!map) return false;
         let keys = Object.keys(map);
         for(let i=0; i<keys.length; i++){
-            map[keys[i]].update();
+            let m = map[keys[i]];
+            m.update();
         }
 
         return true;
@@ -148,6 +171,7 @@ class World{
             let a = map1[k1[i]];
             for(let j=0;j<k2.length;j++){
                 let b = map2[k2[j]];
+                if(!a || !b) return;
                 if(a.id !== b.id && a.pbody.isColliding(b.pbody)){
                     console.log(a.id+' collides with '+b.id);
                     resolve(a,b);
