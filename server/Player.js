@@ -10,7 +10,7 @@ class Player{
     constructor(id){
         this.id = id;
         this.state = PLAYER_STATE.DEFAULT;
-        this.color = 'white';
+        this.color = global.randomFromArray(global.PALETTE.PLAYER) || 'white';
 
         this.pbody = new PBody();
         this.speed = 10;
@@ -22,17 +22,17 @@ class Player{
         this._onRightClick = undefined;
     }
 
-    get onCollision{
+    get onCollision(){
         if(this._onCollision) return this._onCollision;
         return () => {};
     }
 
-    get onClick{
+    get onClick(){
         if(this._onClick) return this._onClick;
         return () => {};
     }
 
-    get onRightClick{
+    get onRightClick(){
         if(this._onRightClick) return this._onRightClick;
         return () => {};
     }

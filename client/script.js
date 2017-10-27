@@ -1,6 +1,7 @@
 const OBJ_TYPE = {
     PLAYER: 0,
     PARTICLE: 1,
+    EMITTER: 2,
 }
 
 class Camera{
@@ -25,33 +26,16 @@ class Camera{
         ctx.save();
         this.drawBackground(ctx, data.world);
         this.drawAll(ctx, data.players, OBJ_TYPE.PLAYER);
+        this.drawAll(ctx, data.emitters, OBJ_TYPE.EMITTER);
+
+        let keys = Object.keys(data.emitters);
+        for(let i=0; i<keys.length; i++){
+            this.drawAll(ctx, data.emitters[keys[i]].particles, OBJ_TYPE.PARTICLE);
+        }
+
         this.drawAll(ctx, data.particles, OBJ_TYPE.PARTICLE);
 
         if(this.debug) this.drawDebug(ctx, data);
-
-        ctx.restore();
-    }
-
-    drawPlayer(ctx, p){
-        ctx.save();
-
-        ctx.fillStyle = p.color || 'white';
-        ctx.beginPath();
-        ctx.arc(0, 0, p.pbody.mass, 0, Math.PI*2);
-        ctx.fill();
-        ctx.closePath();
-
-        ctx.restore();
-    }
-
-    drawParticle(ctx, p){
-        ctx.save();
-
-        ctx.fillStyle = p.color || 'white';
-        ctx.beginPath();
-        ctx.arc(0, 0, p.pbody.mass, 0, Math.PI*2);
-        ctx.stroke();
-        ctx.closePath();
 
         ctx.restore();
     }
@@ -75,12 +59,58 @@ class Camera{
                 case OBJ_TYPE.PARTICLE:
                     this.drawParticle(ctx, a);
                     break;
+                case OBJ_TYPE.EMITTER:
+                    this.drawEmitter(ctx, a);
+                    break;
                 default:
                     console.log('Failed to draw '+a);
                     break;
             }
             ctx.restore();
         }
+    }
+
+    drawPlayer(ctx, p){
+        ctx.save();
+
+        ctx.fillStyle = p.color || 'white';
+        ctx.beginPath();
+        ctx.arc(0, 0, p.pbody.mass, 0, Math.PI*2);
+        ctx.fill();
+        ctx.closePath();
+
+        ctx.restore();
+    }
+
+    drawParticle(ctx, p){
+        ctx.save();
+
+        ctx.fillStyle = p.color || 'white';
+        ctx.beginPath();
+        ctx.arc(0, 0, p.pbody.mass, 0, Math.PI*2);
+        ctx.fill();
+        ctx.closePath();
+        ctx.globalAlpha = 0.25;
+        ctx.beginPath();
+        ctx.arc(0, 0, p.pbody.mass*2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.closePath();
+
+        ctx.restore();
+    }
+
+    drawEmitter(ctx, p){
+        ctx.save();
+
+        ctx.fillStyle = 'blue';
+        ctx.globalAlpha = 0.1;
+
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, Math.PI*2);
+        ctx.fill();
+        ctx.closePath();
+
+        ctx.restore();
     }
 
     drawBackground(ctx, world){
@@ -102,8 +132,9 @@ class Camera{
         grd.addColorStop(0, '#8AF');
         grd.addColorStop(0.5, '#48A');
         grd.addColorStop(1, '#013');
-        ctx.globalAlpha = 0.8;
         ctx.fillStyle = grd;
+        ctx.globalAlpha = 0.8;
+
         ctx.fillRect(0,0,this.w,this.h);
 
         ctx.restore();

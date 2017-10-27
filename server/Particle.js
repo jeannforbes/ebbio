@@ -1,3 +1,5 @@
+let PBody = require('./PBody.js').PBody;
+
 const PARTICLE_TYPES = {
     DEFAULT: 0,
     CIRCLE: 1,
@@ -9,13 +11,19 @@ class Particle{
     constructor(id){
         this.id = id;
         this.type = PARTICLE_TYPES.DEFAULT;
+        this.color = global.randomFromArray(global.PALETTE.PARTICLE) || 'white';
 
         this.pbody = new PBody();
-        this.size = this.pbody.mass;
+        this.pbody.mass = 5;
+        this.maxSpeed = 5;
+
+        this.age = 0;
+        this.lifetime = 5000; // server ticks
     }
 
-    isColliding(){
-        return false;
+    update(){
+        this.age++;
+        this.pbody.move(5);
     }
 }
 

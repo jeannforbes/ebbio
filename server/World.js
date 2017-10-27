@@ -1,6 +1,7 @@
 let Victor = require('victor');
 
 let Player = require('./Player.js').Player;
+let Emitter = require('./Emitter.js').Emitter;
 
 class World{
     constructor(io, room, origin, radius) {
@@ -12,8 +13,12 @@ class World{
 
         this.subWorlds = {}; // worlds inside this one
         this.players = {}; // players
-        this.hotspots = {}; // crumb emitters
+        this.emitters = {}; // crumb emitters
         this.particles = {};
+
+        let e = new Emitter(Date.now());
+        e.pbody.loc.y = -200;
+        this.emitters[e.id] = e;
     }
 
     /*
@@ -91,12 +96,25 @@ class World{
 
         // Players & Particles
         this.checkCollisions(this.players, this.particles, (a,b) => {
+            console.log('particle collision');
             a.pbody.mass += b.pbody.mass;
+            
+            // Delete the particle
             delete this.particles[b.id];
         });
 
+        let eKeys = Object.keys(this.emitters);
+        for(let i=0; i<eKeys.length; i++){
+            let e = this.emitters[eKeys[i]];
+            this.checkCollisions(this.players, e.particles, (a,b) => {
+                a.pbody.mass += b.pbody.mass;
+
+                delete e.particles[b.id];
+            });
+        }
+
         this.updateAll(this.players);
-        this.updateAll(this.hotspots);
+        this.updateAll(this.emitters);
         this.updateAll(this.particles);
         this.updateAll(this.worlds);
 
@@ -106,7 +124,7 @@ class World{
                 radius: _this.radius,
             },
             players: _this.players,
-            hotspots: _this.hotspots,
+            emitters: _this.emitters,
             particles: _this.particles
         });
 
