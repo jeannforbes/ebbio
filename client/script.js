@@ -17,6 +17,11 @@ class Camera{
     render(ctx, data){
         if(!data) return;
 
+        let p = data.players[this.pid];
+        if(!p) return;
+
+        this.centerOn(new Vector(p.pbody.loc.x, p.pbody.loc.y));
+
         ctx.save();
         this.drawBackground(ctx, data.origin);
         this.drawAll(ctx, data.players, OBJ_TYPE.PLAYER);
@@ -53,12 +58,11 @@ class Camera{
 
     drawAll(ctx, map, type){
 
-        ctx.save();
-
         let keys = Object.keys(map);
         for(let i=0; i<keys.length; i++){
             let a = map[keys[i]];
 
+            ctx.save();
             if(a.pbody){
                 let aLoc = this.worldToCamera(new Vector(a.pbody.loc.x, a.pbody.loc.y));
                 ctx.translate(aLoc.x, aLoc.y);
@@ -75,9 +79,8 @@ class Camera{
                     console.log('Failed to draw '+a);
                     break;
             }
+            ctx.restore();
         }
-
-        ctx.restore();
     }
 
     drawBackground(ctx, worldOrigin){

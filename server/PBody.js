@@ -1,13 +1,19 @@
 let Victor = require('victor');
 
 class PBody{
+
     constructor(loc, vel, accel, mass){
         this.loc = loc || new Victor(0,0);
         this.vel = vel || new Victor(0,0);
         this.accel = accel || new Victor(0,0);
 
         this.mass = mass || 10;
+        this.density = 1;
+
+        this.collider = global.COLLIDER.CIRCLE;
     }
+
+    get size(){ return this.mass * this.density; }
 
     // F = m * a
     applyForce(force){
@@ -27,6 +33,21 @@ class PBody{
         this.loc.add(this.vel);
 
         this.accel.x = this.accel.y = 0;
+    }
+
+    isColliding(pb){
+        switch(pb.collider){
+            case COLLIDER.CIRCLE:
+                let dist = this.loc.distance(pb.loc);
+                if(dist.loc < this.size + pb.size) return true;
+                return false;
+                break;
+            case COLLIDER.SQUARE:
+                // Unimplemented
+                break;
+            default:
+                break;
+        }
     }
 }
 

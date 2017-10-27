@@ -15,24 +15,29 @@ class Player{
         this.pbody = new PBody();
         this.speed = 10;
         this.maxSpeed = 10;
-
-        this.mouseLoc = new Victor(0,0);
     }
 
     moveToMouse(data){
+        // Camera coords in world space
         let cameraLoc = new Victor(this.pbody.loc.x + data.w/2, this.pbody.loc.y + data.h/2);
+        // Mouse coords in world space
         let mouseLoc = cameraLoc.clone().subtract(new Victor(data.x, data.y));
-        //let force = this.mouseLoc.clone().subtract(this.pbody.loc).clone().normalize();
-        // What are the mouse coords in the world?
-        // Coords from player to mouse
-        let force = this.pbody.loc.clone().subtract(mouseLoc).normalize();
+        // Vector from player to mouse
+        let playerToMouse = this.pbody.loc.clone().subtract(mouseLoc);
+        // If the mouse is close enough to the player, hold still
+        if(playerToMouse.magnitude() < 10){
+            this.pbody.vel.x = this.pbody.vel.y = 0;
+            return;
+        }
+
+        // Vector from player to mouse
+        let force = playerToMouse.normalize();
         force.x *= this.speed;
         force.y *= this.speed;
         this.pbody.applyForce(force);
     }
 
     update(){
-        //if(this.mouseLoc) this.moveToMouse();
         this.pbody.move(this.maxSpeed);
     }
 

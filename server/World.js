@@ -80,8 +80,16 @@ class World{
     update(io) {
         let _this = this;
 
-        this.checkCollisions(this.players,this.players);
-        this.checkCollisions(this.players, this.particles);
+        this.checkCollisions(this.players, this.players, (a,b) => {
+            let repulse = b.loc.subtract(a.pbody.loc).normalize();
+            a.applyForce(repulse);
+            aToB.x *= -1;
+            aToB.y *= -1;
+            b.applyForce(repulse);
+        });
+        this.checkCollisions(this.players, this.particles, (a,b) => {
+
+        });
 
         this.updateAll(this.players);
         this.updateAll(this.hotspots);
@@ -115,7 +123,7 @@ class World{
             let a = map1[k1[i]];
             for(let j=0;j<k2.length;j++){
                 let b = map2[k2[j]];
-                if(a !== b && a.isColliding(b)){
+                if(a !== b && a.pbody.isColliding(b)){
                     resolve(a,b);
                 }
             }
