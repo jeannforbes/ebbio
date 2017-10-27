@@ -23,7 +23,7 @@ class Camera{
         this.centerOn(new Vector(p.pbody.loc.x, p.pbody.loc.y));
 
         ctx.save();
-        this.drawBackground(ctx, data.origin);
+        this.drawBackground(ctx, data.world);
         this.drawAll(ctx, data.players, OBJ_TYPE.PLAYER);
         this.drawAll(ctx, data.particles, OBJ_TYPE.PARTICLE);
 
@@ -83,9 +83,9 @@ class Camera{
         }
     }
 
-    drawBackground(ctx, worldOrigin){
+    drawBackground(ctx, world){
 
-        let origin = this.worldToCamera(new Vector(worldOrigin.x, worldOrigin.y));
+        let origin = this.worldToCamera(new Vector(world.origin.x, world.origin.y));
 
         ctx.save();
 
@@ -94,7 +94,11 @@ class Camera{
         ctx.fillRect(0,0,this.w, this.h);
 
         // Gradient
-        let grd = ctx.createRadialGradient(origin.x, origin.y,75, origin.x, origin.y, 1000);
+        let grd = ctx.createRadialGradient(
+            origin.x, origin.y, 
+            75, 
+            origin.x, origin.y, 
+            world.radius);
         grd.addColorStop(0, '#8AF');
         grd.addColorStop(0.5, '#48A');
         grd.addColorStop(1, '#013');

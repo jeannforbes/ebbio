@@ -37,7 +37,6 @@ class World{
     playerDisconnect(socket, data){
         let pworld = this.findWorldByPlayerId(socket.id);
         if(pworld && pworld.players[socket.id]){
-            console.log('Deleting player '+socket.id);
             delete pworld.players[socket.id];
         }
     }
@@ -80,15 +79,20 @@ class World{
     update(io) {
         let _this = this;
 
+        // Players & Players
         this.checkCollisions(this.players, this.players, (a,b) => {
-            let repulse = b.loc.subtract(a.pbody.loc).normalize();
-            a.applyForce(repulse);
-            aToB.x *= -1;
-            aToB.y *= -1;
-            b.applyForce(repulse);
+            let aToB = b.pbody.loc.clone().subtract(a.pbody.loc);
+            let dist = aToB.magnitude();
+            aToB.normalize();
+            aToB.x *= - (a.pbody.size + b.pbody.size - dist) *10;
+            aToB.y *= - (a.pbody.size + b.pbody.size - dist) *10;
+            a.pbody.applyForce(aToB);
         });
-        this.checkCollisions(this.players, this.particles, (a,b) => {
 
+        // Players & Particles
+        this.checkCollisions(this.players, this.particles, (a,b) => {
+            a.pbody.mass += b.pbody.mass;
+            delete this.particles[b.id];
         });
 
         this.updateAll(this.players);
@@ -97,7 +101,10 @@ class World{
         this.updateAll(this.worlds);
 
         io.to(this.room).emit('update', {
-            origin: this.origin,
+            world: {
+                origin: _this.origin,
+                radius: _this.radius,
+            },
             players: _this.players,
             hotspots: _this.hotspots,
             particles: _this.particles
@@ -123,7 +130,8 @@ class World{
             let a = map1[k1[i]];
             for(let j=0;j<k2.length;j++){
                 let b = map2[k2[j]];
-                if(a !== b && a.pbody.isColliding(b)){
+                if(a.id !== b.id && a.pbody.isColliding(b.pbody)){
+                    console.log(a.id+' collides with '+b.id);
                     resolve(a,b);
                 }
             }

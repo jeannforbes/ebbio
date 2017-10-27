@@ -39,7 +39,7 @@ class PBody{
         switch(pb.collider){
             case COLLIDER.CIRCLE:
                 let dist = this.loc.distance(pb.loc);
-                if(dist.loc < this.size + pb.size) return true;
+                if(dist < this.size + pb.size) return true;
                 return false;
                 break;
             case COLLIDER.SQUARE:

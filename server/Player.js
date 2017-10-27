@@ -24,6 +24,7 @@ class Player{
         let mouseLoc = cameraLoc.clone().subtract(new Victor(data.x, data.y));
         // Vector from player to mouse
         let playerToMouse = this.pbody.loc.clone().subtract(mouseLoc);
+
         // If the mouse is close enough to the player, hold still
         if(playerToMouse.magnitude() < 10){
             this.pbody.vel.x = this.pbody.vel.y = 0;
@@ -39,10 +40,6 @@ class Player{
 
     update(){
         this.pbody.move(this.maxSpeed);
-    }
-
-    isColliding(){
-        return false;
     }
 }
 

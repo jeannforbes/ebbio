@@ -35,6 +35,7 @@ class Game{
             _this.world.players[player.id] = player;
             socket.join(_this.world.room, function(){ socket.leave(socket.id); });
             socket.emit('joined', player);
+            console.log(socket.id+' joined.');
 
             // Handle client mouse movement
             socket.on('mouseMove', (data) => {
@@ -48,7 +49,7 @@ class Game{
 
             // Handle client disconnecting
             socket.on('disconnect', (data) => {
-                console.log(socket.id+' disconnect detected');
+                console.log(socket.id+' left.');
                 _this.world.playerDisconnect(socket, data);
             });
         });
