@@ -51,10 +51,10 @@ class Player{
         let playerToMouse = this.pbody.loc.clone().subtract(mouseLoc);
 
         // If the mouse is close enough to the player, hold still
-        if(playerToMouse.magnitude() < 10){
+        /*if(playerToMouse.magnitude() < 10){
             this.pbody.vel.x = this.pbody.vel.y = 1;
             return;
-        }
+        }*/
 
         // Vector from player to mouse
         let force = playerToMouse.normalize();
