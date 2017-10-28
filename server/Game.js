@@ -1,7 +1,7 @@
 let Victor = require('victor');
 
 let World = require('./World.js').World;
-let Player = require('./Player.js').Player;
+let Player = require('./Player/Player.js').Player;
 let Particle = require('./Particle.js').Particle;
 
 const GAME_STATES = {

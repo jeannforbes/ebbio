@@ -1,6 +1,6 @@
 let Victor = require('victor');
 
-let Player = require('./Player.js').Player;
+let Player = require('./Player/Player.js').Player;
 let Particle = require('./Particle.js').Particle;
 let Emitter = require('./Emitter.js').Emitter;
 
@@ -25,6 +25,7 @@ class World{
         e2.pbody.loc.y = 400;
         this.emitters[e2.id] = e2;
 
+        global.rootWorld = this;
     }
 
     /*
@@ -55,16 +56,6 @@ class World{
      *  HELPER METHODS
      */
 
-     findWorldByRoom(room){
-        if(this.room === room) return this;
-        let keys = Object.keys(this.subWorlds);
-        for(let i=0; i<keys.length; i++){
-            return this.subWorlds[keys[i]].findWorldByRoom(room);
-        }
-
-        return false;
-     }
-
      findPlayerById(id){
         if(this.players[id]) return this.players[id];
         let keys = Object.keys(this.subWorlds);
@@ -93,23 +84,12 @@ class World{
 
         // player v player
         this.checkCollisions(this.players, this.players, (a,b) => {
-            let aToB = b.pbody.loc.clone().subtract(a.pbody.loc);
-            let dist = aToB.magnitude();
-            aToB.normalize();
-            aToB.x *= - (a.pbody.size + b.pbody.size - dist) * 10;
-            aToB.y *= - (a.pbody.size + b.pbody.size - dist) * 10;
-            a.pbody.applyForce(aToB);
+            console.log(a.pbody);
+            console.log(b.pbody);
+            if(a.pbody && b.pbody) a.pbody.collide(b.pbody);
 
             if(a.pbody.isBehind(b.pbody)){
                 a.onCollision(b);
-                for(var i=0; i<a.biteDamage; i++){
-                    let p = new Particle(Date.now());
-                    p.edible = false;
-                    p.color = b.color;
-                    p.pbody.loc = b.pbody.loc.clone();
-                    p.pbody.applyForce(a.pbody.vel.clone());
-                    this.particles[p.id] = p;
-                }
             }
         });
 

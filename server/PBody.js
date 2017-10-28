@@ -11,15 +11,11 @@ class PBody{
         this.density = 1;
 
         this.collider = global.COLLIDER.CIRCLE;
+
     }
 
     get size(){ return this.mass * this.density; }
-    get forward(){
-        let f = this.vel.clone().normalize();
-        f.x *= this.size;
-        f.x *= this.size;
-        return f;
-    }
+    get forward(){ return this.vel.clone().normalize(); }
 
     // F = m * a
     applyForce(force){
@@ -41,6 +37,15 @@ class PBody{
         this.accel.x = this.accel.y = 0;
     }
 
+    collide(b){
+        let aToB = b.loc.clone().subtract(this.loc);
+        let dist = aToB.magnitude();
+        aToB.normalize();
+        aToB.x *= - (this.size + b.size - dist) * 10;
+        aToB.y *= - (this.size + b.size - dist) * 10;
+        this.applyForce(aToB);
+    }
+
     isColliding(pb){
         switch(pb.collider){
             case COLLIDER.CIRCLE:
@@ -57,6 +62,8 @@ class PBody{
     }
 
     isBehind(pb){
+        if(!this.isFacing(pb, 20)) return false;
+
         // Distance from your front to their loc
         let distA = this.forward.distance(pb.loc);
 
@@ -65,6 +72,15 @@ class PBody{
 
         if(distA > distB) return true;
         return false;
+    }
+
+    isFacing(pb, tolerance){
+        if(!tolerance) tolerance = 10;
+
+        let angle = this.loc.dot(pb.loc);
+        if(90 - angle < tolerance) return true;
+        else return false;
+
     }
 }
 

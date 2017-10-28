@@ -78,9 +78,21 @@ class Camera{
 
         ctx.fillStyle = p.color || 'white';
         ctx.beginPath();
-        ctx.arc(0, 0, p.pbody.mass, 0, Math.PI*2);
+        ctx.arc(0, 0, p.pbody.mass * p.pbody.density, 0, Math.PI*2);
         ctx.fill();
         ctx.closePath();
+
+        // DEBUG -- Draw forward vectors
+        if(this.debug) {
+            let forward = new Vector(p.pbody.vel.x, p.pbody.vel.y).normalize();
+            forward.x *= p.pbody.mass * p.pbody.density;
+            forward.y *= p.pbody.mass * p.pbody.density;
+            ctx.beginPath();
+            ctx.moveTo(0,0);
+            ctx.lineTo(forward.x, forward.y);
+            ctx.stroke();
+            ctx.closePath();
+        }
 
         ctx.restore();
     }
@@ -90,14 +102,27 @@ class Camera{
 
         ctx.fillStyle = p.color || 'white';
         ctx.beginPath();
-        ctx.arc(0, 0, p.pbody.mass, 0, Math.PI*2);
+        ctx.arc(0, 0, p.pbody.mass * p.pbody.density, 0, Math.PI*2);
         ctx.fill();
         ctx.closePath();
         ctx.globalAlpha = 0.25;
         ctx.beginPath();
-        ctx.arc(0, 0, p.pbody.mass*2, 0, Math.PI*2);
+        ctx.arc(0, 0, p.pbody.mass * p.pbody.density, 0, Math.PI*2);
         ctx.fill();
         ctx.closePath();
+
+        // DEBUG -- Draw forward vectors
+        if(this.debug) {
+            let forward = new Vector(p.pbody.vel.x, p.pbody.vel.y).normalize();
+            forward.x *= p.pbody.mass * p.pbody.density;
+            forward.y *= p.pbody.mass * p.pbody.density;
+            ctx.lineWidth = ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.moveTo(0,0);
+            ctx.lineTo(forward.x, forward.y);
+            ctx.stroke();
+            ctx.closePath();
+        }
 
         ctx.restore();
     }
@@ -153,29 +178,6 @@ class Camera{
                 this.debug = false;
                 return; 
         }
-        let playerLoc = this.worldToCamera(new Vector(p.pbody.loc.x, p.pbody.loc.y));
-
-        // Line from mouse's location to player's location
-        ctx.save();
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = 'black';
-        ctx.beginPath();
-        ctx.moveTo(playerLoc.x, playerLoc.y);
-        ctx.lineTo(this.loc.x, this.loc.y);
-        ctx.stroke();
-        ctx.closePath();
-        ctx.restore();
-
-        // Draw to prev data
-        let prevPLoc = prevData.players[p.id].pbody.loc;
-        prevPLoc = this.worldToCamera(new Vector(prevPLoc.x, prevPLoc.y));
-        let lerped = this.lerp(playerLoc, prevPLoc, .20);
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(prevPLoc.x, prevPLoc.y, 10, 0, Math.PI*2);
-        ctx.stroke();
-        ctx.closePath();
-        ctx.restore();
 
     }
 
@@ -217,6 +219,19 @@ class Vector{
 
     distance(v){
         return Math.sqrt(Math.pow(this.x-v.x,2) + (this.y-v.y,2));
+    }
+
+    magnitude(){
+        return Math.sqrt(this.x*this.x + this.y*this.y);
+    }
+
+    normalize(){
+        let m = this.magnitude();
+        if(m != 0){
+            this.x /= m;
+            this.y /= m;
+        }
+        return this;
     }
 
     clone(){
