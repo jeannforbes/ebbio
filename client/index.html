@@ -97,7 +97,6 @@
     const draw = () => {
         if(gameData) {
             let p = gameData.players[socket.id];
-            if(p) camera.centerOn(new Vector(p.pbody.loc.x, p.pbody.loc.y));
             camera.render(ctx, gameData);
         }
 

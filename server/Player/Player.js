@@ -38,6 +38,10 @@ class Player{
         return () => {};
     }
 
+    eatParticle(p){
+        this.pbody.mass += p.pbody.mass;
+    }
+
     moveToMouse(data){
         // Camera coords in world space
         let cameraLoc = new Victor(this.pbody.loc.x + data.w/2, this.pbody.loc.y + data.h/2);

@@ -2,6 +2,7 @@ let Victor = require('victor');
 
 let World = require('./World.js').World;
 let Player = require('./Player/Player.js').Player;
+let Parasite = require('./Player/Parasite.js').Parasite;
 let Particle = require('./Particle.js').Particle;
 
 const GAME_STATES = {
@@ -30,11 +31,11 @@ class Game{
         this.io.on('connection', function(socket){
             
             // Handle client joining
-            let player = new Player(socket.id);
+            let player = new Parasite(socket.id);
             player.pbody.loc = new Victor(100,100);
             _this.world.players[player.id] = player;
             socket.join(_this.world.room, function(){ socket.leave(socket.id); });
-            socket.emit('joined', player);
+            socket.emit('joined', {id: player.id});
             console.log(socket.id+' joined.');
 
             // Handle client mouse movement

@@ -1,7 +1,9 @@
 const OBJ_TYPE = {
     PLAYER: 0,
-    PARTICLE: 1,
-    EMITTER: 2,
+    PARASITE: 1,
+    SYMBIOTE: 2,
+    PARTICLE: 3,
+    EMITTER: 4,
 }
 
 class Camera{
@@ -13,50 +15,65 @@ class Camera{
 
         this.debug = false;
         this.pid = pid;
-        this.p = undefined;
     }
 
     render(ctx, data){
-        if(!data) return;
+        if( !(data && prevData) ) return;
 
-        this.p = data.players[this.pid];
-        if(!this.p) return;
+        let p = data.players[this.pid];
+        let prevP = prevData.players[this.pid];
+        if( !(p && prevP) ) return;
 
-        this.centerOn(new Vector(this.p.pbody.loc.x, this.p.pbody.loc.y));
+        let camLerp = lerp(
+            new Vector(prevP.pbody.loc.x, prevP.pbody.loc.y),
+            new Vector(p.pbody.loc.x, p.pbody.loc.y),
+            1);
+        this.centerOn(camLerp);
 
         ctx.save();
         this.drawBackground(ctx, data.world);
-        this.drawAll(ctx, data.players, OBJ_TYPE.PLAYER);
-        this.drawAll(ctx, data.emitters, OBJ_TYPE.EMITTER);
+        this.drawAll(ctx, data.players, prevData.players, OBJ_TYPE.PARASITE);
+        this.drawAll(ctx, data.emitters, prevData.players, OBJ_TYPE.EMITTER);
 
         let keys = Object.keys(data.emitters);
         for(let i=0; i<keys.length; i++){
-            this.drawAll(ctx, data.emitters[keys[i]].particles, OBJ_TYPE.PARTICLE);
+            if(!prevData.emitters[keys[i]]) continue;
+            this.drawAll(ctx, 
+                data.emitters[keys[i]].particles,
+                prevData.emitters[keys[i]].particles,
+                OBJ_TYPE.PARTICLE);
         }
 
-        this.drawAll(ctx, data.particles, OBJ_TYPE.PARTICLE);
+        this.drawAll(ctx, data.particles, prevData.particles, OBJ_TYPE.PARTICLE);
 
         if(this.debug) this.drawDebug(ctx, data);
 
         ctx.restore();
     }
 
-    drawAll(ctx, map, type){
-        if(!prevData) return;
+    drawAll(ctx, map, prevMap, type){
+        if(!prevMap) return;
 
         let keys = Object.keys(map);
         for(let i=0; i<keys.length; i++){
+            let prevA = prevMap[keys[i]];
             let a = map[keys[i]];
+            if(!prevA) continue;
 
             ctx.save();
             if(a.pbody){
+                let prevLoc = this.worldToCamera(new Vector(prevA.pbody.loc.x, prevA.pbody.loc.y));
                 let aLoc = this.worldToCamera(new Vector(a.pbody.loc.x, a.pbody.loc.y));
-                ctx.translate(aLoc.x, aLoc.y);
+                let aLerped = lerp(aLoc, prevLoc, 0.2);
+                ctx.translate(aLerped.x, aLerped.y);
             }
 
             switch(type){
                 case OBJ_TYPE.PLAYER:
                     this.drawPlayer(ctx, a);
+                    break;
+                case OBJ_TYPE.PARASITE:
+                    this.drawParasite(ctx, a);
                     break;
                 case OBJ_TYPE.PARTICLE:
                     this.drawParticle(ctx, a);
@@ -95,6 +112,62 @@ class Camera{
         }
 
         ctx.restore();
+    }
+
+    drawParasite(ctx, p){
+        ctx.save();
+
+        // Draw segments
+        this.drawParasiteSegment(ctx, p.segment, p.pbody);
+
+        ctx.globalAlpha = 1;
+
+        // Draw main body
+        ctx.fillStyle = p.color || 'white';
+        ctx.beginPath();
+        ctx.arc(0, 0, p.pbody.mass * p.pbody.density, 0, Math.PI*2);
+        ctx.fill();
+        ctx.closePath();
+
+        // Draw jaw
+        let jawLoc = new Vector(
+            p.jaw.relativeLoc.x - p.pbody.loc.x, 
+            p.jaw.relativeLoc.y - p.pbody.loc.y);
+        ctx.fillStyle = p.jaw.color || 'white';
+        ctx.beginPath();
+        ctx.arc(jawLoc.x,jawLoc.y, p.jaw.pbody.mass * p.jaw.pbody.density, 0, Math.PI*2);
+        ctx.fill();
+        ctx.closePath();
+
+        // DEBUG -- Draw forward vectors
+        if(this.debug) {
+            let forward = new Vector(p.pbody.vel.x, p.pbody.vel.y).normalize();
+            forward.x *= p.pbody.mass * p.pbody.density;
+            forward.y *= p.pbody.mass * p.pbody.density;
+            ctx.beginPath();
+            ctx.moveTo(0,0);
+            ctx.lineTo(forward.x, forward.y);
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        ctx.restore();
+    }
+
+    drawParasiteSegment(ctx, segment, pbody){
+        if(!segment) return;
+        ctx.globalAlpha *= 0.75;
+        console.log(segment.pbody.loc);
+        let segLoc = new Vector(
+            segment.pbody.loc.x - pbody.loc.x,
+            segment.pbody.loc.y - pbody.loc.y);
+        ctx.fillStyle = segment.color || 'white';
+        ctx.beginPath();
+        ctx.arc(segLoc.x,segLoc.y, segment.pbody.mass * segment.pbody.density, 0, Math.PI*2);
+        ctx.fill();
+        ctx.closePath();
+
+        if(segment.next) this.drawParasiteSegment(ctx, segment.next, pbody);
     }
 
     drawParticle(ctx, p){
@@ -191,12 +264,6 @@ class Camera{
         return v.clone().add(this.loc);
     }
 
-    lerp(pos, targetPos, frac){
-        let lerpVec = pos.clone();
-        lerpVec.x += (targetPos.x + lerpVec.x) * frac;
-        lerpVec.y += (targetPos.y + lerpVec.y) * frac;
-        return lerpVec;
-    }
 }
 
 class Vector{
@@ -238,4 +305,11 @@ class Vector{
         return new Vector(this.x, this.y);
     }
 
+}
+
+const lerp = (pos, targetPos, frac) => {
+    let lerpVec = pos.clone();
+    lerpVec.x += (targetPos.x - lerpVec.x) * frac;
+    lerpVec.y += (targetPos.y - lerpVec.y) * frac;
+    return lerpVec;
 }

@@ -84,8 +84,6 @@ class World{
 
         // player v player
         this.checkCollisions(this.players, this.players, (a,b) => {
-            console.log(a.pbody);
-            console.log(b.pbody);
             if(a.pbody && b.pbody) a.pbody.collide(b.pbody);
 
             if(a.pbody.isBehind(b.pbody)){
@@ -97,7 +95,7 @@ class World{
         this.checkCollisions(this.players, this.particles, (a,b) => {
             if(!b.edible) return;
             console.log('particle collision');
-            a.pbody.mass += b.pbody.mass;
+            a.eatParticle(b);
             delete this.particles[b.id];
         });
 
@@ -151,10 +149,13 @@ class World{
             let a = map1[k1[i]];
             for(let j=0;j<k2.length;j++){
                 let b = map2[k2[j]];
-                if(!a || !b) return;
-                if(a.id !== b.id && a.pbody.isColliding(b.pbody)){
+                if(!a || !b) continue;
+                if( a.id === b.id) continue;
+                if(!a.isParasite && a.pbody.isColliding(b.pbody)){
                     console.log(a.id+' collides with '+b.id);
                     resolve(a,b);
+                } else if(a.isParasite) {
+                    if(a.jaw.pbody.isColliding(b.pbody)){ resolve(a,b); }
                 }
             }
         }

@@ -29,12 +29,17 @@ class PBody{
         this.vel.add(this.accel);
 
         // Limit velocity
-        if(this.vel.magnitude() > limit) 
-            this.vel.normalize().multiply(new Victor(limit, limit));
+        if(this.vel.magnitude() > limit) {
+            this.vel.normalize();
+            this.vel.x *= limit;
+            this.vel.y *= limit;
+        }
 
         this.loc.add(this.vel);
 
         this.accel.x = this.accel.y = 0;
+
+        return;w
     }
 
     collide(b){
@@ -82,6 +87,13 @@ class PBody{
         else return false;
 
     }
+}
+
+lerp = (pos, targetPos, frac) => {
+    let lerpVec = pos.clone();
+    lerpVec.x += (targetPos.x + lerpVec.x) * frac;
+    lerpVec.y += (targetPos.y + lerpVec.y) * frac;
+    return lerpVec;
 }
 
 module.exports.PBody = PBody;
