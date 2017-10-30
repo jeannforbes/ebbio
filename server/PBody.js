@@ -26,7 +26,7 @@ class PBody{
     }
 
     move(limit){
-        if(this.mass < 0) this.mass = 1;
+        if(this.mass < 0) this.mass = 0.1;
 
         this.vel.add(this.accel);
 

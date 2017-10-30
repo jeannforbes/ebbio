@@ -6,17 +6,22 @@ class Parasite extends Player{
     constructor(id){
         super(id);
 
-        this.jaw = new Jaw(this.pbody);
+        this.jaw = new Jaw(this);
 
-        this.segment = new Segment(this.pbody);
+        this.segment = new Segment(this);
         this.segment.color = this.color;
 
         this.isParasite = true;
+
     }
 
     grow(){
-        this.pbody.mass /= 2;
-        this.segment.grow(this.pbody.mass);
+        if(this.segment){
+            this.pbody.mass = parseInt(this.pbody.mass/2);
+            this.segment.grow(this.pbody.mass);
+        } else {
+            this.segment = new Segment(this);
+        }
     }
 
     update(){
@@ -33,20 +38,20 @@ class Parasite extends Player{
         this.jaw.snapToFront();
 
         // Watch out: danger noodle
-        this.segment.move(this.pbody.loc);
+        if(this.segment) this.segment.move(this.pbody.loc);
 
         return;
     }
 }
 
 class Jaw{
-    constructor(parentBody){
-        this.parentBody = parentBody;
+    constructor(parent){
+        this.parentBody = parent.pbody;
         this.pbody = new PBody();
 
         this.color = 'red';
 
-        this.relativeLoc = parentBody.loc.clone();
+        this.relativeLoc = this.parentBody.loc.clone();
     }
 
     snapToFront(){
@@ -58,8 +63,8 @@ class Jaw{
 }
 
 class Segment{
-    constructor(prevBody){
-        this.prev = prevBody;
+    constructor(prev){
+        this.prev = prev.pbody;
         this.next = undefined;
 
         this.pbody = new PBody();
@@ -68,6 +73,7 @@ class Segment{
     }
 
     move(loc){
+
         if(!loc) return;
         let aToB = loc.clone().subtract(this.pbody.loc);
         let dist = aToB.magnitude() - this.prev.mass*this.prev.density *1.25;
@@ -80,15 +86,21 @@ class Segment{
         if(this.next) this.next.move(this.pbody.loc);
     }
 
+    killNext(){
+        delete this.next;
+        console.log(this.next);
+    }
+
     grow(mass){
         if(mass <= 0) return;
 
         this.pbody.mass += mass/4;
+        if(this.pbody.mass > 30) this.pbody.mass = 30;
 
         if(this.next){
-            this.next.grow(mass/2);
+            this.next.grow(this.pbody.mass/4);
         } else {
-            this.next = new Segment(this.pbody);
+            this.next = new Segment(this);
             this.next.color = this.color;
             this.next.pbody.loc = this.pbody.loc.clone();
             return;

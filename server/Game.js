@@ -21,6 +21,9 @@ class Game{
         this.updateRate = 100;
 
         this.world = undefined; // yggdrasil confirmed
+
+        // Enables client-side developer tools
+        this.devMode = true;
     }
 
     initialize() {
@@ -31,7 +34,7 @@ class Game{
         this.io.on('connection', function(socket){
             
             // Handle client joining
-            let player = new Parasite(socket.id);
+            let player = new Player(socket.id);
             player.pbody.loc = new Victor(100,100);
             _this.world.players[player.id] = player;
             socket.join(_this.world.room, function(){ socket.leave(socket.id); });
@@ -53,6 +56,29 @@ class Game{
                 console.log(socket.id+' left.');
                 _this.world.clientDisconnect(socket, data);
             });
+
+            /*
+             *   DEV MODE, baby!
+             */
+
+             socket.on('addMass', (data) => {
+                _this.world.findPlayerById(socket.id).pbody.mass += 1;
+             });
+
+             socket.on('subtractMass', (data) => {
+                _this.world.findPlayerById(socket.id).pbody.mass -= 1;
+             });
+
+             socket.on('cyclePlayerType', (data) => {
+                let nextType = 'player';
+                let w = _this.world.findWorldByPlayerId(socket.id);
+                let p = w.players[socket.id];
+                if(!p.isParasite) nextType = 'parasite';
+                //delete w.players[socket.id];
+                if(nextType === 'parasite') w.players[socket.id] = new Parasite();
+                else w.players[socket.id] = new Player();
+             });
+
         });
     }
 

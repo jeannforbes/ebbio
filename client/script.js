@@ -1,9 +1,7 @@
 const OBJ_TYPE = {
     PLAYER: 0,
-    PARASITE: 1,
-    SYMBIOTE: 2,
-    PARTICLE: 3,
-    EMITTER: 4,
+    PARTICLE: 1,
+    EMITTER: 2,
 }
 
 class Camera{
@@ -32,7 +30,7 @@ class Camera{
 
         ctx.save();
         this.drawBackground(ctx, data.world);
-        this.drawAll(ctx, data.players, prevData.players, OBJ_TYPE.PARASITE);
+        this.drawAll(ctx, data.players, prevData.players, OBJ_TYPE.PLAYER);
         this.drawAll(ctx, data.emitters, prevData.players, OBJ_TYPE.EMITTER);
 
         let keys = Object.keys(data.emitters);
@@ -70,10 +68,15 @@ class Camera{
 
             switch(type){
                 case OBJ_TYPE.PLAYER:
-                    this.drawPlayer(ctx, a);
-                    break;
-                case OBJ_TYPE.PARASITE:
-                    this.drawParasite(ctx, a);
+                    if(this.debug){
+                        // Player masses
+                        ctx.font = '12px Arial';
+                        ctx.strokeStyle = a.color;
+                        ctx.strokeText(a.pbody.mass, 20,20);
+                        ctx.strokeStyle = 'black';
+                    }
+                    if(a.isParasite) this.drawParasite(ctx, a);
+                    else this.drawPlayer(ctx, a);
                     break;
                 case OBJ_TYPE.PARTICLE:
                     this.drawParticle(ctx, a);
@@ -93,14 +96,23 @@ class Camera{
 
         ctx.save();
 
+        // Player body
         ctx.fillStyle = p.color || 'white';
         ctx.beginPath();
         ctx.arc(0, 0, p.pbody.mass * p.pbody.density, 0, Math.PI*2);
         ctx.fill();
         ctx.closePath();
 
-        // DEBUG -- Draw forward vectors
+        ctx.restore();
+
+        /*
+         *  DEBUG
+         */
+
         if(this.debug) {
+            ctx.save();
+
+            // Forward vectors
             let forward = new Vector(p.pbody.vel.x, p.pbody.vel.y).normalize();
             forward.x *= p.pbody.mass * p.pbody.density;
             forward.y *= p.pbody.mass * p.pbody.density;
@@ -109,9 +121,9 @@ class Camera{
             ctx.lineTo(forward.x, forward.y);
             ctx.stroke();
             ctx.closePath();
-        }
 
-        ctx.restore();
+            ctx.restore();
+        }
     }
 
     drawParasite(ctx, p){
@@ -156,7 +168,8 @@ class Camera{
 
     drawParasiteSegment(ctx, segment, pbody){
         if(!segment) return;
-        ctx.globalAlpha *= 0.75;
+        ctx.globalAlpha *= (ctx.globalAlpha > 0.2) ? 0.9 : 1;
+        if(!segment.next) ctx.globalAlpha = 1;
         console.log(segment.pbody.loc);
         let segLoc = new Vector(
             segment.pbody.loc.x - pbody.loc.x,
@@ -252,6 +265,21 @@ class Camera{
                 return; 
         }
 
+        // Draw debug help commands
+        ctx.save();
+
+        ctx.fillStyle = 'white';
+        ctx.globalAlpha = 0.2;
+        ctx.fillRect(canvas.width-150, 5, canvas.width-20, 80);
+
+        ctx.font = '12px Arial';
+        ctx.globalAlpha = 1;
+        ctx.strokeText('Debug Commands', canvas.width-140,20);
+        ctx.strokeText('[ to add mass', canvas.width-140, 40);
+        ctx.strokeText('] to add mass', canvas.width-140, 60);
+        ctx.strokeText('\\ to cycle player type', canvas.width-140, 80);
+
+        ctx.restore();
     }
 
     /* HELPER FUNCTIONS */

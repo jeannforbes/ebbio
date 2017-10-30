@@ -88,6 +88,17 @@
                 case 73: // i
                     console.log(socket.id);
                     console.log(gameData);
+                    break;
+                /* DEBUG COMMANDS */
+                case 220: // backslash
+                    socket.emit('cyclePlayerType', {});
+                    break;
+                case 219: // open bracket
+                socket.emit('subtractMass', {});
+                    break;
+                case 221: // close bracket
+                    socket.emit('addMass', {});
+                    break;
                 default:
                     break;
             }
