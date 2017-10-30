@@ -28,6 +28,8 @@ class Parasite extends Player{
         super.update();
 
         // Snap the jaw onto the front of the parasite
+        this.jaw.pbody.mass = this.pbody.mass/2;
+        if(this.jaw.pbody.mass < 5) this.jaw.pbody.mass = 5;
         this.jaw.snapToFront();
 
         // Watch out: danger noodle
@@ -41,7 +43,6 @@ class Jaw{
     constructor(parentBody){
         this.parentBody = parentBody;
         this.pbody = new PBody();
-        this.pbody.mass = 10;
 
         this.color = 'red';
 
@@ -88,6 +89,7 @@ class Segment{
             this.next.grow(mass/2);
         } else {
             this.next = new Segment(this.pbody);
+            this.next.color = this.color;
             this.next.pbody.loc = this.pbody.loc.clone();
             return;
         }

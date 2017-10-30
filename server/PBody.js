@@ -26,6 +26,8 @@ class PBody{
     }
 
     move(limit){
+        if(this.mass < 0) this.mass = 1;
+
         this.vel.add(this.accel);
 
         // Limit velocity
@@ -39,7 +41,7 @@ class PBody{
 
         this.accel.x = this.accel.y = 0;
 
-        return;w
+        return;
     }
 
     collide(b){

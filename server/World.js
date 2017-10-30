@@ -154,8 +154,17 @@ class World{
                 if(!a.isParasite && a.pbody.isColliding(b.pbody)){
                     console.log(a.id+' collides with '+b.id);
                     resolve(a,b);
-                } else if(a.isParasite) {
-                    if(a.jaw.pbody.isColliding(b.pbody)){ resolve(a,b); }
+                }
+                if(a.isParasite && a.jaw.pbody.isColliding(b.pbody)){
+                    resolve(a,b);
+                }
+                if(b.isParasite){
+                    // Check collision with segments
+                    let next = b.segment;
+                    while(next){
+                        if(a.pbody.isColliding(next.pbody)){ resolve(a, next); return; }
+                        else{ next = next.next; }
+                    }
                 }
             }
         }
