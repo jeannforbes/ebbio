@@ -11,8 +11,10 @@ class Camera{
         this.w = width || 100;
         this.h = height || 200;
 
-        this.debug = false;
         this.pid = pid;
+
+        this.debug = false;
+        this.debugBoxLoc = new Vector(10,10);
     }
 
     render(ctx, data){
@@ -270,14 +272,22 @@ class Camera{
 
         ctx.fillStyle = 'white';
         ctx.globalAlpha = 0.2;
-        ctx.fillRect(canvas.width-150, 5, canvas.width-20, 80);
+        ctx.fillRect(this.debugBoxLoc.x, 
+                     this.debugBoxLoc.y, 
+                     this.debugBoxLoc.x+150,
+                     this.debugBoxLoc.y+100);
 
         ctx.font = '12px Arial';
         ctx.globalAlpha = 1;
-        ctx.strokeText('Debug Commands', canvas.width-140,20);
-        ctx.strokeText('[ to add mass', canvas.width-140, 40);
-        ctx.strokeText('] to add mass', canvas.width-140, 60);
-        ctx.strokeText('\\ to cycle player type', canvas.width-140, 80);
+
+        ctx.strokeText('Debug Commands', 
+            this.debugBoxLoc.x+10,this.debugBoxLoc.y+20);
+        ctx.strokeText('[ to add mass', 
+            this.debugBoxLoc.x+10, this.debugBoxLoc.y+40);
+        ctx.strokeText('] to add mass', 
+            this.debugBoxLoc.x+10, this.debugBoxLoc.y+60);
+        ctx.strokeText('\\ to cycle player type', 
+            this.debugBoxLoc.x+10, this.debugBoxLoc.y+80);
 
         ctx.restore();
     }

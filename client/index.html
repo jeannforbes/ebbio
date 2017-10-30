@@ -89,7 +89,13 @@
                     console.log(socket.id);
                     console.log(gameData);
                     break;
-                /* DEBUG COMMANDS */
+                default:
+                    break;
+            }
+
+            if(!camera.debug) return;
+            /* DEBUG COMMANDS */
+            switch(e.keyCode){
                 case 220: // backslash
                     socket.emit('cyclePlayerType', {});
                     break;
