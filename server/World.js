@@ -146,32 +146,80 @@ class World{
                 let b = map2[k2[j]];
                 if(!a || !b) continue;
                 if( a.id === b.id) continue;
-                if(!a.isParasite && a.pbody.isColliding(b.pbody)){
-                    resolve(a,b);
+
+                // Advanced player
+                if(a.isParasite || a.isSymbiote){
+                    // Check main body
+                    if(a.jaw.pbody.isColliding(b.pbody)){
+                        resolve(a,b);
+                    // Check segments or baubles
+                    } else if(b.isParasite){
+                        if(this.checkParasiteCollision(a.jaw,b))
+                            resolve(a,b);
+                    } else if(a.isParasite && b.isSymbiote){
+                        if(this.checkCollisionWithSymbiote(a.jaw,b))
+                            resolve(a,b);
+                    }
                 }
+                // Simple player
+                else{
+                    if(a.pbody.isColliding(b.pbody)){
+                        resolve(a,b);
+                    }
+                    if(b.isParasite){
+                        if(this.checkCollisionWithParasite(a,b)) 
+                            resolve(a,b);
+                    }
+                    else if(b.isSymbiote){
+                        if(this.checkCollisionWithSymbiote(a,b))
+                            resolve(a,b);
+                    }
+                }
+
+                /* DEPRECATED COLLISION CHECKS
+
+                // If they have a jaw
                 if( (a.isParasite || a.isSymbiote) && a.jaw.pbody.isColliding(b.pbody)){
                     resolve(a,b);
                 }
+                // If they don't have a jaw
+                else if(a.pbody.isColliding(b.pbody)){
+                    resolve(a,b);
+                }
+                // If they're a parasite with segments
                 if(b.isParasite){
-                    // Check collision with segments
+                    // Check segment collisions
                     let next = b.segment;
                     while(next){
                         if(a.pbody.isColliding(next.pbody)){ resolve(a, next); return; }
                         else{ next = next.next; }
                     }
                 }
+                // If they're a symbiote with baubles
                 if(b.isSymbiote){
-                    // Check collision with baubles
+                    // Check bauble collisions
                     for(let i=0; i<b.baubles.length; i++){
                         if(a.pbody.isColliding(b.baubles[i].pbody)){ 
                             resolve(a, b.baubles[i]);
                         }
                     }
-                }
+                }*/
             }
         }
+    }
 
-        return true;
+    checkCollisionWithParasite(a,b) {
+        let next = b.segment;
+        while(next){
+            if(a.pbody.isColliding(next.pbody)) { return true; }
+            else { next = next.next; }
+        }
+    }
+
+    checkCollisionWithSymbiote(a,b){
+        for(let i=0; i<b.baubles.length; i++){
+            if(a.pbody.isColliding(b.baubles[i].pbody)){ return true; }
+        }
     }
 }
 

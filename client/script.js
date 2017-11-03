@@ -184,7 +184,6 @@ class Camera{
         if(!segment) return;
         ctx.globalAlpha *= (ctx.globalAlpha > 0.2) ? 0.9 : 1;
         if(!segment.next) ctx.globalAlpha = 1;
-        console.log(segment.pbody.loc);
         let segLoc = new Vector(
             segment.pbody.loc.x - pbody.loc.x,
             segment.pbody.loc.y - pbody.loc.y);
