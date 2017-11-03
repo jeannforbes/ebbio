@@ -32,6 +32,9 @@ loadGlobalConstants = () =>{
         return arr[parseInt(Math.random() * arr.length)];
     };
 
+    global.NAMES = ['sesame', 'kiwi', 'paprika', 'oatmeal', 'pumpkin', 'pie', 'apple', 'cake',
+                    'plum', 'almond', 'juice', 'bean', 'potato', 'tomato', 'sugar', 'sherry'];
+
     return true;
 };
 

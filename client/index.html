@@ -88,6 +88,23 @@
                 case 73: // i
                     console.log(socket.id);
                     console.log(gameData);
+                    break;
+                default:
+                    break;
+            }
+
+            if(!camera.debug) return;
+            /* DEBUG COMMANDS */
+            switch(e.keyCode){
+                case 220: // backslash
+                    socket.emit('cyclePlayerType', {});
+                    break;
+                case 219: // open bracket
+                socket.emit('subtractMass', {});
+                    break;
+                case 221: // close bracket
+                    socket.emit('addMass', {});
+                    break;
                 default:
                     break;
             }
@@ -97,7 +114,6 @@
     const draw = () => {
         if(gameData) {
             let p = gameData.players[socket.id];
-            if(p) camera.centerOn(new Vector(p.pbody.loc.x, p.pbody.loc.y));
             camera.render(ctx, gameData);
         }
 

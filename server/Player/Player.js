@@ -1,6 +1,6 @@
 let Victor = require('victor');
-let PBody = require('./PBody.js').PBody;
-let PlayerAbility = new (require('./PlayerAbility.js').PlayerAbility)();
+let PBody = require('../PBody.js').PBody;
+let Ability = new (require('./Abilities/Abilities.js').Abilities)();
 
 const PLAYER_STATE = {
     'DEFAULT': 0,
@@ -17,13 +17,9 @@ class Player{
         this.speed = 20;
         this.maxSpeed = 10;
 
-        this.biteDamage = 2;
-        this.dashBoost = 10;
-        this.dashDuration = 1000;
-
         // Event/input handlers
-        this._onCollision = PlayerAbility.bite.bind(this);
-        this._onClick = PlayerAbility.dash.bind(this);
+        this._onCollision = Ability.bite.bind(this);
+        this._onClick = Ability.dash.bind(this);
         this._onRightClick = undefined;
     }
 
@@ -40,6 +36,10 @@ class Player{
     get onRightClick(){
         if(this._onRightClick) return this._onRightClick;
         return () => {};
+    }
+
+    eatParticle(p){
+        this.pbody.mass += p.pbody.mass;
     }
 
     moveToMouse(data){
@@ -64,6 +64,14 @@ class Player{
     }
 
     update(){
+        if(this.pbody.mass <= 0){
+            this.pbody = new PBody();
+            return;
+        }
+        if(this.pbody.loc.magnitude() > 500){
+            let centerForce = this.pbody.loc.clone().multiply(new Victor(-1,-1));
+            this.pbody.applyForce(centerForce);
+        }
         this.pbody.move(this.maxSpeed);
     }
 }

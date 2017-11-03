@@ -1,6 +1,6 @@
 let Victor = require('victor');
 
-let Player = require('./Player.js').Player;
+let Player = require('./Player/Player.js').Player;
 let Particle = require('./Particle.js').Particle;
 let Emitter = require('./Emitter.js').Emitter;
 
@@ -18,13 +18,9 @@ class World{
         this.particles = {}; // stray particles
 
         let e = new Emitter(Date.now());
-        e.pbody.loc.y = -200;
         this.emitters[e.id] = e;
 
-        let e2 = new Emitter(Date.now());
-        e2.pbody.loc.y = 400;
-        this.emitters[e2.id] = e2;
-
+        global.rootWorld = this;
     }
 
     /*
@@ -55,16 +51,6 @@ class World{
      *  HELPER METHODS
      */
 
-     findWorldByRoom(room){
-        if(this.room === room) return this;
-        let keys = Object.keys(this.subWorlds);
-        for(let i=0; i<keys.length; i++){
-            return this.subWorlds[keys[i]].findWorldByRoom(room);
-        }
-
-        return false;
-     }
-
      findPlayerById(id){
         if(this.players[id]) return this.players[id];
         let keys = Object.keys(this.subWorlds);
@@ -93,23 +79,10 @@ class World{
 
         // player v player
         this.checkCollisions(this.players, this.players, (a,b) => {
-            let aToB = b.pbody.loc.clone().subtract(a.pbody.loc);
-            let dist = aToB.magnitude();
-            aToB.normalize();
-            aToB.x *= - (a.pbody.size + b.pbody.size - dist) * 10;
-            aToB.y *= - (a.pbody.size + b.pbody.size - dist) * 10;
-            a.pbody.applyForce(aToB);
+            if(a.pbody && b.pbody) a.pbody.collide(b.pbody);
 
             if(a.pbody.isBehind(b.pbody)){
                 a.onCollision(b);
-                for(var i=0; i<a.biteDamage; i++){
-                    let p = new Particle(Date.now());
-                    p.edible = false;
-                    p.color = b.color;
-                    p.pbody.loc = b.pbody.loc.clone();
-                    p.pbody.applyForce(a.pbody.vel.clone());
-                    this.particles[p.id] = p;
-                }
             }
         });
 
@@ -117,7 +90,7 @@ class World{
         this.checkCollisions(this.players, this.particles, (a,b) => {
             if(!b.edible) return;
             console.log('particle collision');
-            a.pbody.mass += b.pbody.mass;
+            a.eatParticle(b);
             delete this.particles[b.id];
         });
 
@@ -171,10 +144,29 @@ class World{
             let a = map1[k1[i]];
             for(let j=0;j<k2.length;j++){
                 let b = map2[k2[j]];
-                if(!a || !b) return;
-                if(a.id !== b.id && a.pbody.isColliding(b.pbody)){
-                    console.log(a.id+' collides with '+b.id);
+                if(!a || !b) continue;
+                if( a.id === b.id) continue;
+                if(!a.isParasite && a.pbody.isColliding(b.pbody)){
                     resolve(a,b);
+                }
+                if( (a.isParasite || a.isSymbiote) && a.jaw.pbody.isColliding(b.pbody)){
+                    resolve(a,b);
+                }
+                if(b.isParasite){
+                    // Check collision with segments
+                    let next = b.segment;
+                    while(next){
+                        if(a.pbody.isColliding(next.pbody)){ resolve(a, next); return; }
+                        else{ next = next.next; }
+                    }
+                }
+                if(b.isSymbiote){
+                    // Check collision with baubles
+                    for(let i=0; i<b.baubles.length; i++){
+                        if(a.pbody.isColliding(b.baubles[i].pbody)){ 
+                            resolve(a, b.baubles[i]);
+                        }
+                    }
                 }
             }
         }
