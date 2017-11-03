@@ -57,8 +57,8 @@ class Abilities{
         dp.pbody.loc = this.pbody.loc.clone();
         dp.pbody.applyForce(force);
 
-        let particles = global.rootWorld.findWorldByPlayerId(this.id).particles;
-        particles[dp.id] = dp;
+        let world = global.rootWorld.findWorldByPlayerId(this.id);
+        if(world) world.particles[dp.id] = dp;
 
         // Time's out the boost after the duration
         setTimeout(() => {
