@@ -36,6 +36,7 @@ class Game{
             
             // Handle client joining
             let player = new Symbiote(socket.id);
+            player.username = global.randomFromArray(global.NAMES);
             player.pbody.loc = new Victor(100,100);
             _this.world.players[player.id] = player;
             socket.join(_this.world.room, function(){ socket.leave(socket.id); });

@@ -70,9 +70,19 @@ class Camera{
 
             switch(type){
                 case OBJ_TYPE.PLAYER:
+                    // Player names
                     if(a.isParasite) this.drawParasite(ctx, a);
                     else if(a.isSymbiote) this.drawSymbiote(ctx, a);
                     else this.drawPlayer(ctx, a);
+
+                    // Write name
+                    let name = a.username || 'anonymous';
+                    ctx.save();
+                    ctx.font = '12px Arial';
+                    ctx.strokeStyle = 'black';
+                    ctx.strokeText(name, a.pbody.mass+2,a.pbody.mass-10);
+                    ctx.restore();
+
                     break;
                 case OBJ_TYPE.PARTICLE:
                     this.drawParticle(ctx, a);
@@ -85,7 +95,7 @@ class Camera{
                     break;
             }
             if(this.debug){
-                // Player masses
+                // Pbody masses
                 ctx.save();
                 ctx.font = '12px Arial';
                 ctx.strokeStyle = 'black';
