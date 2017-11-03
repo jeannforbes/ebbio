@@ -152,10 +152,9 @@ class World{
                 if(!a || !b) continue;
                 if( a.id === b.id) continue;
                 if(!a.isParasite && a.pbody.isColliding(b.pbody)){
-                    console.log(a.id+' collides with '+b.id);
                     resolve(a,b);
                 }
-                if(a.isParasite && a.jaw.pbody.isColliding(b.pbody)){
+                if( (a.isParasite || a.isSymbiote) && a.jaw.pbody.isColliding(b.pbody)){
                     resolve(a,b);
                 }
                 if(b.isParasite){
@@ -165,6 +164,9 @@ class World{
                         if(a.pbody.isColliding(next.pbody)){ resolve(a, next); return; }
                         else{ next = next.next; }
                     }
+                }
+                if(a.isSymbiote){
+                    // Check collision with baubles
                 }
             }
         }

@@ -3,6 +3,7 @@ let Victor = require('victor');
 let World = require('./World.js').World;
 let Player = require('./Player/Player.js').Player;
 let Parasite = require('./Player/Parasite.js').Parasite;
+let Symbiote = require('./Player/Symbiote.js').Symbiote;
 let Particle = require('./Particle.js').Particle;
 
 const GAME_STATES = {
@@ -34,7 +35,7 @@ class Game{
         this.io.on('connection', function(socket){
             
             // Handle client joining
-            let player = new Player(socket.id);
+            let player = new Symbiote(socket.id);
             player.pbody.loc = new Victor(100,100);
             _this.world.players[player.id] = player;
             socket.join(_this.world.room, function(){ socket.leave(socket.id); });
@@ -70,13 +71,11 @@ class Game{
              });
 
              socket.on('cyclePlayerType', (data) => {
-                let nextType = 'player';
                 let w = _this.world.findWorldByPlayerId(socket.id);
                 let p = w.players[socket.id];
-                if(!p.isParasite) nextType = 'parasite';
-                //delete w.players[socket.id];
-                if(nextType === 'parasite') w.players[socket.id] = new Parasite();
-                else w.players[socket.id] = new Player();
+                if(p.isParasite) w.players[socket.id] = new Symbiote();
+                else if(p.isSymbiote) w.players[socket.id] = new Player();
+                else w.players[socket.id] = new Parasite();
              });
 
         });

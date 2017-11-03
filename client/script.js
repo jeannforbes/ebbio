@@ -70,14 +70,8 @@ class Camera{
 
             switch(type){
                 case OBJ_TYPE.PLAYER:
-                    if(this.debug){
-                        // Player masses
-                        ctx.font = '12px Arial';
-                        ctx.strokeStyle = a.color;
-                        ctx.strokeText(a.pbody.mass, 20,20);
-                        ctx.strokeStyle = 'black';
-                    }
                     if(a.isParasite) this.drawParasite(ctx, a);
+                    else if(a.isSymbiote) this.drawSymbiote(ctx, a);
                     else this.drawPlayer(ctx, a);
                     break;
                 case OBJ_TYPE.PARTICLE:
@@ -89,6 +83,14 @@ class Camera{
                 default:
                     console.log('Failed to draw '+a);
                     break;
+            }
+            if(this.debug){
+                // Player masses
+                ctx.save();
+                ctx.font = '12px Arial';
+                ctx.strokeStyle = 'black';
+                ctx.strokeText(a.pbody.mass, a.pbody.mass+2,a.pbody.mass+2);
+                ctx.restore();
             }
             ctx.restore();
         }
@@ -183,6 +185,58 @@ class Camera{
         ctx.closePath();
 
         if(segment.next) this.drawParasiteSegment(ctx, segment.next, pbody);
+    }
+
+    drawSymbiote(ctx, p){
+        ctx.save();
+
+        ctx.globalAlpha = 1;
+
+        // Draw main body
+        ctx.fillStyle = p.color || 'white';
+        ctx.beginPath();
+        ctx.arc(0, 0, p.pbody.mass * p.pbody.density, 0, Math.PI*2);
+        ctx.fill();
+        ctx.closePath();
+
+        // Draw jaw
+        let jawLoc = new Vector(
+            p.jaw.relativeLoc.x - p.pbody.loc.x, 
+            p.jaw.relativeLoc.y - p.pbody.loc.y);
+        ctx.fillStyle = p.jaw.color || 'white';
+        ctx.beginPath();
+        ctx.arc(jawLoc.x,jawLoc.y, p.jaw.pbody.mass * p.jaw.pbody.density, 0, Math.PI*2);
+        ctx.fill();
+        ctx.closePath();
+
+        // Draw baubles
+        for(let i=0; i< p.baubles.length; i++){
+            let relLoc = new Vector(
+                p.baubles[i].pbody.loc.x - p.pbody.loc.x,
+                p.baubles[i].pbody.loc.y - p.pbody.loc.y);
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = p.baubles[i].color;
+            ctx.beginPath();
+            ctx.arc(relLoc.x, relLoc.y, p.baubles[i].pbody.mass *p.baubles[i].pbody.density, 0, Math.PI*2);
+            ctx.fill();
+            ctx.closePath();
+            ctx.restore();
+        }
+
+        // DEBUG -- Draw forward vectors
+        if(this.debug) {
+            let forward = new Vector(p.pbody.vel.x, p.pbody.vel.y).normalize();
+            forward.x *= p.pbody.mass * p.pbody.density;
+            forward.y *= p.pbody.mass * p.pbody.density;
+            ctx.beginPath();
+            ctx.moveTo(0,0);
+            ctx.lineTo(forward.x, forward.y);
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        ctx.restore();
     }
 
     drawParticle(ctx, p){
