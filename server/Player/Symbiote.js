@@ -14,6 +14,8 @@ class Symbiote extends Player{
 
         this.isSymbiote = true;
 
+        this.innerWorld;
+
     }
 
     grow(){

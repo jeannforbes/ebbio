@@ -36,8 +36,15 @@ class Game{
             
             // Handle client joining
             let player = new Player(socket.id);
+            // Random username
             player.username = global.randomFromArray(global.NAMES);
-            player.pbody.loc = new Victor(100,100);
+            // Random spawn location
+            let pLoc = new Victor(Math.random()-0.5, Math.random()-0.5);
+            pLoc.x *= _this.world.radius;
+            pLoc.y *= _this.world.radius;
+            player.pbody.loc = pLoc;
+
+            // Okay, let's make the player
             _this.world.players[player.id] = player;
             socket.join(_this.world.room, function(){ socket.leave(socket.id); });
             socket.emit('joined', {id: player.id});

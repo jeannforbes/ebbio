@@ -18,12 +18,7 @@ class World{
         this.particles = {}; // stray particles
 
         let e = new Emitter(Date.now());
-        e.pbody.loc.y = -200;
         this.emitters[e.id] = e;
-
-        let e2 = new Emitter(Date.now());
-        e2.pbody.loc.y = 400;
-        this.emitters[e2.id] = e2;
 
         global.rootWorld = this;
     }
@@ -165,8 +160,13 @@ class World{
                         else{ next = next.next; }
                     }
                 }
-                if(a.isSymbiote){
+                if(b.isSymbiote){
                     // Check collision with baubles
+                    for(let i=0; i<b.baubles.length; i++){
+                        if(a.pbody.isColliding(b.baubles[i].pbody)){ 
+                            resolve(a, b.baubles[i]);
+                        }
+                    }
                 }
             }
         }

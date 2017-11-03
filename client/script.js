@@ -78,9 +78,9 @@ class Camera{
                     // Write name
                     let name = a.username || 'anonymous';
                     ctx.save();
-                    ctx.font = '12px Arial';
+                    ctx.font = '16px Roboto';
                     ctx.strokeStyle = 'black';
-                    ctx.strokeText(name, a.pbody.mass+2,a.pbody.mass-10);
+                    ctx.fillText(name, a.pbody.mass+2,a.pbody.mass-10);
                     ctx.restore();
 
                     break;
