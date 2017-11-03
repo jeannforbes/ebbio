@@ -68,8 +68,11 @@ class Player{
             this.pbody = new PBody();
             return;
         }
+        if(this.pbody.loc.magnitude() > 500){
+            let centerForce = this.pbody.loc.clone().multiply(new Victor(-1,-1));
+            this.pbody.applyForce(centerForce);
+        }
         this.pbody.move(this.maxSpeed);
-        if(this.pbody.loc.magnitude() > 500) this.pbody.loc = new Victor(0,0);
     }
 }
 
