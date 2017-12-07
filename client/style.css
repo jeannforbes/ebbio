@@ -3,4 +3,17 @@
     padding:0;
 }
 
+#evoReminder {
+    position: fixed;
+    background-color: red;
+    right: 45%;
+    bottom: 20%;
+    border: 3px solid black;
+    visibility: hidden;
+}
+
+canvas{
+    display: block;
+}
+
 @import url(https://fonts.googleapis.com/css?family=Roboto);
